@@ -80,8 +80,6 @@ const tools = [
       { name: 'Photo Editor', description: 'Comprehensive studio canvas tool for sketching freehand paths, adding shapes, or deploying filters.', icon: Paintbrush, link: '/ai/photo-editor' },
       { name: 'Watermark IMAGE', description: 'Overlay transparent branding marks or text configurations in batch loops.', icon: Droplet, link: '/ai/watermark-image' },
       { name: 'Blur Face / Photo', description: 'Mask target regions, license plates, or faces using pixelation filters or gaussian blur boxes.', icon: Eraser, link: '/ai/blur' },
-      { name: 'Remove Background (AI)', description: 'Utilize on-device WASM models to isolate foreground subjects and strip background pixels locally.', icon: Scissors, link: '/ai/remove-background' },
-      { name: 'Change Background Color', description: 'Swap out isolated alpha-channel backgrounds for official passport gradients inside the local app tab.', icon: Paintbrush, link: '/ai/change-background' },
       { name: 'Exam Photo Resizer', description: 'Strict rigid cropping tool matching target dimension guidelines required by official registration boards.', icon: User, link: '/ai/exam-photo' },
     ]
   }
