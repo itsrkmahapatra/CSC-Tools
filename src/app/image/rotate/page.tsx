@@ -76,7 +76,7 @@ export default function RotateImage() {
       <div className="py-24">
         <h1 className="text-4xl font-bold text-center text-gray-800 mb-4">Rotate Image</h1>
         <p className="text-center text-gray-500 mb-8">Shift portrait/landscape visuals dynamically.</p>
-        <Dropzone onFilesDrop={(files) => setFile(files[0])} accept="image/*" multiple={false} theme="teal" label="Select Image" />
+        <Dropzone onFilesDrop={(files) => setFile(files[0])} accept="image/*" multiple={false} theme="blue" label="Select Image" />
       </div>
     )
   }

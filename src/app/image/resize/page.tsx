@@ -72,7 +72,7 @@ export default function ResizeImage() {
       <div className="py-24">
         <h1 className="text-4xl font-bold text-center text-gray-800 mb-4">Resize Image</h1>
         <p className="text-center text-gray-500 mb-8">Scale dimensions up or down using absolute pixel width/height rules.</p>
-        <Dropzone onFilesDrop={(files) => setFile(files[0])} accept="image/*" multiple={false} theme="teal" label="Select Image" />
+        <Dropzone onFilesDrop={(files) => setFile(files[0])} accept="image/*" multiple={false} theme="blue" label="Select Image" />
       </div>
     )
   }
