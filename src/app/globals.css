@@ -5,5 +5,11 @@
 @layer base {
   body {
     @apply bg-gray-50 text-gray-900 font-sans;
+    /* Anti-copy and anti-drag protections */
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-drag: none;
   }
 }

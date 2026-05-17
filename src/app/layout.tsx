@@ -15,6 +15,24 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Anti-copy / Anti-DevTools script
+              document.addEventListener('contextmenu', event => event.preventDefault());
+              document.addEventListener('keydown', event => {
+                // Prevent F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U, Ctrl+S
+                if (event.keyCode === 123 || 
+                   (event.ctrlKey && event.shiftKey && (event.keyCode === 73 || event.keyCode === 74 || event.keyCode === 67)) ||
+                   (event.ctrlKey && (event.keyCode === 85 || event.keyCode === 83))) {
+                  event.preventDefault();
+                }
+              });
+            `
+          }}
+        />
+      </head>
       <body className="flex flex-col min-h-screen">
         <header className="bg-yellow-100 text-yellow-800 text-sm font-medium py-2 px-4 flex items-center justify-center sticky top-0 z-50 shadow-sm">
           <Lock className="w-4 h-4 mr-2" />
