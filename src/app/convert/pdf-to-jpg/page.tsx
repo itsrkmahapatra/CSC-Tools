@@ -34,7 +34,7 @@ export default function PDFtoJPG() {
       <div className="py-24">
         <h1 className="text-4xl font-bold text-center text-gray-800 mb-4">PDF to JPG</h1>
         <p className="text-center text-gray-500 mb-8">Rasterize vector pages into high-resolution discrete images.</p>
-        <Dropzone onFilesDrop={(files) => setFile(files[0])} accept="application/pdf" multiple={false} theme="orange" label="Select PDF file" />
+        <Dropzone onFilesDrop={(files) => setFile(files[0])} accept="application/pdf" multiple={false} theme="red" label="Select PDF file" />
       </div>
     )
   }

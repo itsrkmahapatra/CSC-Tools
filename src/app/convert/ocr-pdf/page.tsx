@@ -46,7 +46,7 @@ export default function OCRPDF() {
       <div className="py-24">
         <h1 className="text-4xl font-bold text-center text-gray-800 mb-4">OCR Image to Text</h1>
         <p className="text-center text-gray-500 mb-8">Leverage compiled browser WASM engines to read flat scanned images and stitch selectable text arrays.</p>
-        <Dropzone onFilesDrop={(files) => setFile(files[0])} accept="image/*" multiple={false} theme="orange" label="Select Scanned Image" />
+        <Dropzone onFilesDrop={(files) => setFile(files[0])} accept="image/*" multiple={false} theme="red" label="Select Scanned Image" />
       </div>
     )
   }

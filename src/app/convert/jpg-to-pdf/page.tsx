@@ -47,7 +47,7 @@ export default function JPGtoPDF() {
       <div className="py-24">
         <h1 className="text-4xl font-bold text-center text-gray-800 mb-4">JPG to PDF</h1>
         <p className="text-center text-gray-500 mb-8">Convert standalone or bulk image assets directly into a compiled PDF.</p>
-        <Dropzone onFilesDrop={setFiles} accept="image/jpeg, image/png" theme="orange" label="Select Images" />
+        <Dropzone onFilesDrop={setFiles} accept="image/jpeg, image/png" theme="red" label="Select Images" />
       </div>
     )
   }
