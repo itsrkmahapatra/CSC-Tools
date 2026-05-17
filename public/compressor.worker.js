@@ -1,7 +1,25 @@
+// Mock DOM for PDF.js inside Web Worker
+if (typeof self.document === 'undefined') {
+  self.window = self;
+  self.document = {
+    createElement: function(tag) {
+      if (tag.toLowerCase() === 'canvas') {
+        return new OffscreenCanvas(1, 1);
+      }
+      return { style: {} };
+    },
+    getElementsByTagName: function() { return []; },
+    head: { appendChild: function() {} },
+    documentElement: { style: {} }
+  };
+  self.HTMLCanvasElement = self.OffscreenCanvas;
+}
+
 importScripts('https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js');
 importScripts('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+pdfjsLib.GlobalWorkerOptions.disableWorker = true;
 
 self.onmessage = async function(e) {
   const { fileBuffer, targetKB } = e.data;
