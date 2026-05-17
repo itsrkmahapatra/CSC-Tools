@@ -4,7 +4,7 @@ import { Lock } from 'lucide-react'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'OmniFiles',
+  title: 'CSC Tools',
   description: '100% Local Sandboxed Processing for PDF and Image Files.',
 }
 
