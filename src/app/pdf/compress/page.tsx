@@ -1,66 +1,84 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Dropzone from '@/components/ui/Dropzone'
 import WorkspaceLayout from '@/components/ui/WorkspaceLayout'
-import { PDFDocument } from 'pdf-lib'
-import { getPdfPageImages } from '@/lib/pdf-utils'
 
 export default function CompressPDF() {
   const [file, setFile] = useState<File | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
-  const [level, setLevel] = useState<'recommended' | 'extreme'>('recommended')
+  const [targetKB, setTargetKB] = useState<number>(500)
+  const [progressMsg, setProgressMsg] = useState('')
+  const [progressPct, setProgressPct] = useState(0)
+  const workerRef = useRef<Worker | null>(null)
+
+  useEffect(() => {
+    if (file) {
+      // Suggest 50% compression as default target
+      setTargetKB(Math.round((file.size / 1024) * 0.5))
+    }
+  }, [file])
+
+  useEffect(() => {
+    // Note: Due to basePath, the worker is loaded from /CSC-Tools/
+    workerRef.current = new Worker('/CSC-Tools/compressor.worker.js')
+    
+    workerRef.current.onmessage = (e) => {
+      const { type, message, percent, buffer, error } = e.data
+      
+      if (type === 'PROGRESS') {
+        setProgressMsg(message)
+        setProgressPct(percent)
+      } else if (type === 'COMPLETE') {
+        const blob = new Blob([buffer], { type: 'application/pdf' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `compressed-${file?.name}`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        setIsProcessing(false)
+        setProgressMsg('Done!')
+        setProgressPct(100)
+      } else if (type === 'ERROR') {
+        console.error(error)
+        alert(`Compression Error: ${error}`)
+        setIsProcessing(false)
+        setProgressMsg('')
+      }
+    }
+
+    return () => {
+      workerRef.current?.terminate()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [file])
 
   const handleProcess = async () => {
-    if (!file) return
+    if (!file || !workerRef.current) return
     setIsProcessing(true)
+    setProgressMsg('Initializing Web Worker...')
+    setProgressPct(0)
+    
     try {
-      if (level === 'recommended') {
-        // Standard Structure Optimization
-        const arrayBuffer = await file.arrayBuffer()
-        const pdf = await PDFDocument.load(arrayBuffer)
-        const newPdf = await PDFDocument.create()
-        const copiedPages = await newPdf.copyPages(pdf, pdf.getPageIndices())
-        copiedPages.forEach((page) => newPdf.addPage(page))
-        // Strips dead objects
-        const pdfBytes = await newPdf.save({ useObjectStreams: false })
-        download(pdfBytes, `compressed-${file.name}`)
-      } else {
-        // Extreme Flattening (Render to images, then rebuild)
-        const images = await getPdfPageImages(file)
-        const newPdf = await PDFDocument.create()
-        for (const imgUrl of images) {
-          const imgBytes = await fetch(imgUrl).then(r => r.arrayBuffer())
-          const image = await newPdf.embedJpg(imgBytes)
-          const page = newPdf.addPage([image.width, image.height])
-          page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height })
-        }
-        const pdfBytes = await newPdf.save()
-        download(pdfBytes, `extreme-compressed-${file.name}`)
-      }
+      const arrayBuffer = await file.arrayBuffer()
+      // Dispatch payload to isolated Web Worker thread
+      workerRef.current.postMessage({
+        fileBuffer: arrayBuffer,
+        targetKB: targetKB
+      }, [arrayBuffer])
     } catch (e) {
       console.error(e)
-      alert("Error compressing PDF.")
-    } finally {
+      alert("Failed to read file.")
       setIsProcessing(false)
     }
-  }
-
-  const download = (bytes: Uint8Array, filename: string) => {
-    const blob = new Blob([bytes as unknown as BlobPart], { type: 'application/pdf' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
   }
 
   if (!file) {
     return (
       <div className="py-24">
         <h1 className="text-4xl font-bold text-center text-gray-800 mb-4">Compress PDF</h1>
-        <p className="text-center text-gray-500 mb-8">Reduce file size while optimizing for maximal PDF quality locally.</p>
+        <p className="text-center text-gray-500 mb-8">Reduce file size dynamically by targeting a specific KB threshold utilizing an Adaptive Web Worker Loop.</p>
         <Dropzone onFilesDrop={(files) => setFile(files[0])} accept="application/pdf" multiple={false} theme="red" label="Select PDF file" />
       </div>
     )
@@ -69,28 +87,37 @@ export default function CompressPDF() {
   return (
     <WorkspaceLayout 
       onProcess={handleProcess} 
-      processLabel="Compress PDF" 
+      processLabel={isProcessing ? "Processing..." : "Start Adaptive Compression"} 
       colorTheme="red"
       isProcessing={isProcessing}
       sidebarContent={
         <div className="space-y-6">
           <div>
-            <h3 className="font-semibold text-gray-700 mb-3">Compression Level</h3>
-            <div className="flex flex-col gap-3">
-              <label className={`border-2 p-4 rounded-lg cursor-pointer transition-colors ${level === 'recommended' ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-white'}`}>
-                <input type="radio" name="level" value="recommended" checked={level === 'recommended'} onChange={() => setLevel('recommended')} className="hidden" />
-                <span className="font-bold block mb-1">Recommended Compression</span>
-                <span className="text-xs text-gray-500">Good quality, removes dead structural objects and standardizes streams. Text remains selectable.</span>
-              </label>
-              
-              <label className={`border-2 p-4 rounded-lg cursor-pointer transition-colors ${level === 'extreme' ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-white'}`}>
-                <input type="radio" name="level" value="extreme" checked={level === 'extreme'} onChange={() => setLevel('extreme')} className="hidden" />
-                <span className="font-bold block mb-1">Extreme Compression</span>
-                <span className="text-xs text-gray-500">Flattens the entire document into compressed images. Drastically reduces size for image-heavy PDFs but text will no longer be selectable.</span>
-              </label>
+            <h3 className="font-semibold text-gray-700 mb-2">Target Size (KB)</h3>
+            <div className="flex space-x-2 items-center">
+              <input 
+                type="number" 
+                min="10" 
+                value={targetKB} 
+                onChange={(e) => setTargetKB(parseInt(e.target.value) || 0)} 
+                className="w-full border rounded p-2 text-center" 
+                disabled={isProcessing}
+              />
+              <span className="text-gray-500 text-sm font-bold">KB</span>
             </div>
+            <p className="text-xs text-gray-500 mt-2">Original Size: {(file.size / 1024).toFixed(0)} KB. Enter your desired file size footprint.</p>
           </div>
-          <button onClick={() => setFile(null)} className="text-sm text-red-500 hover:underline">Cancel</button>
+          
+          {isProcessing && (
+            <div className="bg-red-50 p-4 rounded border border-red-200">
+              <p className="text-xs font-bold text-red-800 mb-2 animate-pulse">{progressMsg}</p>
+              <div className="w-full bg-red-200 rounded-full h-2.5">
+                <div className="bg-red-600 h-2.5 rounded-full transition-all duration-300" style={{ width: `${progressPct}%` }}></div>
+              </div>
+            </div>
+          )}
+
+          <button onClick={() => setFile(null)} disabled={isProcessing} className="text-sm text-red-500 hover:underline disabled:opacity-50">Cancel</button>
         </div>
       }
     >
