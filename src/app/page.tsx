@@ -91,7 +91,7 @@ export default function Home() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
       <h1 className="text-4xl font-bold text-center mb-4 text-gray-800">Every tool you need to work with PDFs and Images</h1>
-      <h2 className="text-xl text-center text-gray-500 mb-12">100% Client-Side. Private, Fast, and Free.</h2>
+      <h2 className="text-xl text-center text-gray-500 mb-12">100% Client-Side. Private, Fast, and Free. <span className="text-xs text-gray-300 ml-2">v1.1 Live</span></h2>
 
       <div className="space-y-12">
         {tools.map((section, idx) => (
