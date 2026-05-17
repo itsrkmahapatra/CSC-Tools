@@ -40,7 +40,7 @@ export default function RootLayout({
         </header>
         <div className="bg-white border-b py-4 px-8 shadow-sm">
           <Link href="/" className="text-2xl font-black text-red-600 tracking-tight flex items-center gap-2 w-max cursor-pointer hover:opacity-80 transition-opacity">
-            <span className="bg-red-600 text-white px-2 py-1 rounded-md">Omni</span>Files
+            <span className="bg-red-600 text-white px-2 py-1 rounded-md">CSC</span> Tools
           </Link>
         </div>
         <main className="flex-grow">

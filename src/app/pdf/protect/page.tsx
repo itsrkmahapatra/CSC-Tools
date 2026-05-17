@@ -19,8 +19,8 @@ export default function ProtectPDF() {
       // pdf-lib does not support creating encrypted PDFs natively in all versions,
       // but we can set metadata to mimic protection or use object streams.
       // In a full production WASM environment, a dedicated AES-256 PDF writer would be linked here.
-      pdf.setAuthor('Protected by OmniFiles')
-      pdf.setCreator('OmniFiles Security')
+      pdf.setAuthor('Protected by CSC Tools')
+      pdf.setCreator('CSC Tools Security')
       
       // Try to save with password if the library supports it, otherwise standard save.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

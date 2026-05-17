@@ -6,7 +6,7 @@ import WorkspaceLayout from '@/components/ui/WorkspaceLayout'
 export default function WatermarkImage() {
   const [file, setFile] = useState<File | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
-  const [text, setText] = useState('OmniFiles')
+  const [text, setText] = useState('CSC Tools')
   const [opacity, setOpacity] = useState(0.5)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const imgRef = useRef<HTMLImageElement | null>(null)
