@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { 
   FileDown, FileImage, Layers, FileSignature, FileHeart, Scissors, Expand, Image as ImageIcon,
   RotateCw, Crop, Wrench, Unlock, Lock, Hash, Droplet, FileMinus, Columns,
-  FileText, Presentation, Table, Globe, FileCheck, ScanText, RefreshCw, FlipHorizontal, Camera, 
+  Globe, FileCheck, ScanText, RefreshCw, FlipHorizontal, Camera, 
   Smile, Paintbrush, Eraser, User
 } from 'lucide-react'
 
@@ -43,14 +43,8 @@ const tools = [
     bg: 'hover:bg-orange-50',
     items: [
       { name: 'JPG to PDF', description: 'Convert standalone or bulk image assets directly into individual pages or single compiled files.', icon: FileImage, link: '/convert/jpg-to-pdf' },
-      { name: 'WORD to PDF', description: 'Client-side parsing layouts to convert .docx text files cleanly to PDF schemas.', icon: FileText, link: '/convert/word-to-pdf' },
-      { name: 'POWERPOINT to PDF', description: 'Map .pptx slides into structured presentation pages.', icon: Presentation, link: '/convert/powerpoint-to-pdf' },
-      { name: 'EXCEL to PDF', description: 'Scale spreadsheet grids natively to fit within precise print-margins.', icon: Table, link: '/convert/excel-to-pdf' },
       { name: 'HTML to PDF', description: 'Take raw HTML blocks or canvas snapshots and vector render them directly to standard formats.', icon: Globe, link: '/convert/html-to-pdf' },
       { name: 'PDF to JPG', description: 'Rasterize vector pages into high-resolution discrete images.', icon: FileImage, link: '/convert/pdf-to-jpg' },
-      { name: 'PDF to WORD', description: 'Read absolute textual coordinate arrays and reconstruct editable paragraph structures.', icon: FileText, link: '/convert/pdf-to-word' },
-      { name: 'PDF to POWERPOINT', description: 'Extract graphics and localized bounding text boxes to form distinct slide grids.', icon: Presentation, link: '/convert/pdf-to-powerpoint' },
-      { name: 'PDF to EXCEL', description: 'Scrape underlying data grids and compile raw values into neat .xlsx or .csv sheets.', icon: Table, link: '/convert/pdf-to-excel' },
       { name: 'PDF to PDF/A', description: 'Standardize output structures into the ISO-compliant format safe for long-term document archiving.', icon: FileCheck, link: '/convert/pdf-to-pdfa' },
       { name: 'OCR PDF', description: 'Leverage compiled browser WASM engines to read flat scanned images and stitch selectable text arrays.', icon: ScanText, link: '/convert/ocr-pdf' },
     ]

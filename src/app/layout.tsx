@@ -47,7 +47,11 @@ export default function RootLayout({
           {children}
         </main>
         <footer className="bg-white border-t py-6 text-center text-gray-500 text-sm">
-          <p>Engineered by Raj Kishor Mahapatra</p>
+          <p className="mb-2">Engineered by Raj Kishor Mahapatra</p>
+          <div className="flex justify-center gap-4">
+            <Link href="/terms" className="hover:text-red-600 underline">Terms & Conditions</Link>
+            <Link href="/disclaimer" className="hover:text-red-600 underline">Disclaimer</Link>
+          </div>
         </footer>
       </body>
     </html>
