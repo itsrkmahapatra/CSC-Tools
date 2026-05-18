@@ -30,9 +30,11 @@ function UpscaleTool() {
     
     try {
       // Use absolute path relative to the public root
+      console.log("Loading model from:", '/CSC-Tools/models/super_resolution_quantized.onnx');
       const session = await ort.InferenceSession.create('/CSC-Tools/models/super_resolution_quantized.onnx', {
         executionProviders: ['webgpu', 'webgl', 'wasm']
       })
+      console.log("Session created successfully");
       setProgress(30)
 
       const img = new Image()
