@@ -6,6 +6,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  transpilePackages: ['upscaler', '@tensorflow/tfjs', '@imgly/background-removal'],
 };
 
 export default nextConfig;
