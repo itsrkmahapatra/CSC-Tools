@@ -24,25 +24,30 @@ pdfjsLib.GlobalWorkerOptions.disableWorker = true;
 self.onmessage = async function(e) {
   const { fileBuffer, targetKB } = e.data;
   const targetBytes = targetKB * 1024;
+  const toleranceLower = targetBytes * 0.98; // Aim for 98-100% of target
   
   try {
-    self.postMessage({ type: "PROGRESS", message: "Auditing resource baseline...", percent: 5 });
+    self.postMessage({ type: "PROGRESS", message: "Analyzing document structure...", percent: 5 });
     
-    // We utilize PDF.js to parse the document tree and extract rendered layers
     const pdf = await pdfjsLib.getDocument({ data: fileBuffer }).promise;
     const numPages = pdf.numPages;
     
-    let S = 1.0;
-    let Q = 0.85;
-    let currentSize = Infinity;
-    let bestBuffer = null;
-    let iteration = 1;
+    let lowS = 0.1, highS = 1.0;
+    let lowQ = 0.1, highQ = 0.95;
     
-    // Adaptive Binary Search Optimization Loop
-    while (true) {
+    let bestBuffer = null;
+    let bestSize = 0;
+    let iteration = 1;
+    const maxIterations = 8; // Limit attempts to prevent infinite loops
+
+    // Binary search on Scale primarily, keeping Quality high if possible
+    while (iteration <= maxIterations) {
+      let S = (lowS + highS) / 2;
+      let Q = (lowQ + highQ) / 2;
+
       self.postMessage({ 
         type: "PROGRESS", 
-        message: `Iteration ${iteration}: Downsampling at Scale ${(S*100).toFixed(0)}%, Quality ${(Q*100).toFixed(0)}%`, 
+        message: `Optimization Pass ${iteration}/${maxIterations}: Testing Scale ${(S*100).toFixed(0)}%`, 
         percent: Math.min(95, 10 + (iteration * 10)) 
       });
       
@@ -51,49 +56,49 @@ self.onmessage = async function(e) {
       for (let i = 1; i <= numPages; i++) {
         const page = await pdf.getPage(i);
         const viewport = page.getViewport({ scale: S });
-        
-        // 1. Canvas Offscreen Allocation
         const canvas = new OffscreenCanvas(viewport.width, viewport.height);
         const ctx = canvas.getContext('2d');
-        if (!ctx) throw new Error("OffscreenCanvas 2D context failed.");
-        
-        // 2. Downsampling Pipeline
         await page.render({ canvasContext: ctx, viewport: viewport }).promise;
         
-        // 3. Lossy Compression Stream
         const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: Q });
-        const arrayBuffer = await blob.arrayBuffer();
-        
-        // 4. Structural Tree Interception (Rebuilding via pdf-lib)
-        const image = await newPdf.embedJpg(arrayBuffer);
+        const imgBuffer = await blob.arrayBuffer();
+        const image = await newPdf.embedJpg(imgBuffer);
         const newPage = newPdf.addPage([image.width, image.height]);
         newPage.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
       }
       
-      // 5. Evaluation Check
       const pdfBytes = await newPdf.save();
-      currentSize = pdfBytes.byteLength;
-      bestBuffer = pdfBytes;
-      
-      if (currentSize <= targetBytes) {
-        self.postMessage({ type: "PROGRESS", message: `Optimization threshold achieved! Final Size: ${(currentSize/1024).toFixed(2)} KB`, percent: 100 });
+      const currentSize = pdfBytes.byteLength;
+
+      if (currentSize <= targetBytes && currentSize >= toleranceLower) {
+        // Perfect hit
+        bestBuffer = pdfBytes;
+        bestSize = currentSize;
         break;
       }
-      
-      // Safety degradation limits
-      if (S <= 0.25 && Q <= 0.40) {
-        self.postMessage({ type: "PROGRESS", message: `Safety floor reached. Best possible size: ${(currentSize/1024).toFixed(2)} KB`, percent: 100 });
-        break;
+
+      if (currentSize > targetBytes) {
+        // Too big, decrease scale
+        highS = S;
+        highQ = Math.max(0.3, Q - 0.05);
+      } else {
+        // Too small, increase scale
+        lowS = S;
+        lowQ = Math.min(0.95, Q + 0.05);
+        // Keep this as fallback best
+        if (currentSize > bestSize) {
+          bestSize = currentSize;
+          bestBuffer = pdfBytes;
+        }
       }
-      
-      // Adjust parameters systematically for next loop
-      S = Math.max(0.25, S * 0.85);
-      Q = Math.max(0.40, Q - 0.10);
       iteration++;
     }
+
+    if (!bestBuffer) throw new Error("Could not find suitable compression parameters.");
     
+    self.postMessage({ type: "PROGRESS", message: `Final Optimization Complete. Size: ${(bestSize/1024).toFixed(2)} KB`, percent: 100 });
     self.postMessage({ type: "COMPLETE", buffer: bestBuffer }, [bestBuffer.buffer]);
   } catch (error) {
-    self.postMessage({ type: "ERROR", error: error.message || "Worker thread failed." });
+    self.postMessage({ type: "ERROR", error: error.message || "Compression engine failed." });
   }
 };

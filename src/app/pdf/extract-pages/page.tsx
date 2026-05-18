@@ -4,13 +4,14 @@ import Dropzone from '@/components/ui/Dropzone'
 import WorkspaceLayout from '@/components/ui/WorkspaceLayout'
 import { PDFDocument } from 'pdf-lib'
 import { getPdfPageImages } from '@/lib/pdf-utils'
+import JSZip from 'jszip'
 
 export default function ExtractPages() {
   const [file, setFile] = useState<File | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [pageImages, setPageImages] = useState<string[]>([])
-  // default to none selected
   const [pagesToExtract, setPagesToExtract] = useState<number[]>([])
+  const [extractMode, setExtractMode] = useState<'merged' | 'zip'>('merged')
 
   useEffect(() => {
     if (file) {
@@ -32,21 +33,41 @@ export default function ExtractPages() {
     try {
       const arrayBuffer = await file.arrayBuffer()
       const pdf = await PDFDocument.load(arrayBuffer)
-      
-      const newPdf = await PDFDocument.create()
       const sortedIndices = [...pagesToExtract].sort((a, b) => a - b)
-      const copiedPages = await newPdf.copyPages(pdf, sortedIndices)
-      copiedPages.forEach((page) => newPdf.addPage(page))
 
-      const pdfBytes = await newPdf.save()
-      const blob = new Blob([pdfBytes as unknown as BlobPart], { type: 'application/pdf' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `extracted-${file.name}`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
+      if (extractMode === 'merged') {
+        const newPdf = await PDFDocument.create()
+        const copiedPages = await newPdf.copyPages(pdf, sortedIndices)
+        copiedPages.forEach((page) => newPdf.addPage(page))
+
+        const pdfBytes = await newPdf.save()
+        const blob = new Blob([pdfBytes as unknown as BlobPart], { type: 'application/pdf' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `extracted-${file.name}`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+      } else {
+        const zip = new JSZip()
+        for (let i = 0; i < sortedIndices.length; i++) {
+          const pageIdx = sortedIndices[i]
+          const singlePagePdf = await PDFDocument.create()
+          const [copiedPage] = await singlePagePdf.copyPages(pdf, [pageIdx])
+          singlePagePdf.addPage(copiedPage)
+          const pdfBytes = await singlePagePdf.save()
+          zip.file(`page-${pageIdx + 1}.pdf`, pdfBytes)
+        }
+        const zipBlob = await zip.generateAsync({ type: 'blob' })
+        const url = URL.createObjectURL(zipBlob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `extracted-pages-${file.name.replace('.pdf', '')}.zip`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+      }
     } catch (e) {
       console.error(e)
       alert("Error processing PDF.")
@@ -65,7 +86,7 @@ export default function ExtractPages() {
     return (
       <div className="py-24">
         <h1 className="text-4xl font-bold text-center text-gray-800 mb-4">Extract PDF Pages</h1>
-        <p className="text-center text-gray-500 mb-8">Pull specific pages out of a PDF and compile them into a brand-new document.</p>
+        <p className="text-center text-gray-500 mb-8">Pull specific pages out of a PDF and compile them into a brand-new document or a ZIP of individual files.</p>
         <Dropzone onFilesDrop={(files) => setFile(files[0])} accept="application/pdf" multiple={false} theme="red" label="Select PDF file" />
       </div>
     )
@@ -79,6 +100,24 @@ export default function ExtractPages() {
       isProcessing={isProcessing}
       sidebarContent={
         <div className="space-y-6">
+          <div>
+            <h3 className="font-semibold text-gray-700 mb-3">Extraction Mode</h3>
+            <div className="flex flex-col gap-2">
+              <button 
+                onClick={() => setExtractMode('merged')} 
+                className={`py-2 px-4 rounded border text-sm font-medium transition-colors ${extractMode === 'merged' ? 'bg-red-500 text-white border-red-600 shadow-inner' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+              >
+                Single Merged PDF
+              </button>
+              <button 
+                onClick={() => setExtractMode('zip')} 
+                className={`py-2 px-4 rounded border text-sm font-medium transition-colors ${extractMode === 'zip' ? 'bg-red-500 text-white border-red-600 shadow-inner' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+              >
+                Individual Pages (ZIP)
+              </button>
+            </div>
+          </div>
+
           <div>
             <h3 className="font-semibold text-gray-700 mb-3">Pages to Extract</h3>
             <p className="text-3xl font-bold text-red-600 mb-2">{pagesToExtract.length} selected</p>

@@ -1,6 +1,6 @@
 {
   "name": "csc-tools",
-  "version": "0.1.0",
+  "version": "1.2.0",
   "private": true,
   "homepage": "https://itsrkmahapatra.github.io/CSC-Tools",
   "scripts": {
@@ -13,10 +13,13 @@
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
+    "@imgly/background-removal": "^1.7.0",
+    "@tensorflow/tfjs": "^4.11.0",
     "browser-image-compression": "^2.0.2",
     "cropperjs": "^1.6.2",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
+    "jszip": "^3.10.1",
     "lucide-react": "^1.16.0",
     "next": "14.2.35",
     "pdf-lib": "^1.17.1",
@@ -25,10 +28,12 @@
     "react-dom": "^18",
     "react-signature-canvas": "^1.1.0-alpha.2",
     "tesseract.js": "^7.0.0",
+    "upscaler": "^1.0.0",
     "zustand": "^5.0.13"
   },
   "devDependencies": {
     "@types/cropperjs": "^1.1.5",
+    "@types/jszip": "^3.4.0",
     "@types/node": "^20",
     "@types/pdfjs-dist": "^2.10.377",
     "@types/react": "^18",

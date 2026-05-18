@@ -1,12 +1,14 @@
+'use client'
+import { useState } from 'react'
 import Link from 'next/link'
 import { 
   FileDown, FileImage, Layers, FileSignature, FileHeart, Scissors, Expand, Image as ImageIcon,
   RotateCw, Crop, Wrench, Unlock, Lock, Hash, Droplet, FileMinus, Columns,
   Globe, FileCheck, ScanText, RefreshCw, FlipHorizontal, Camera, 
-  Smile, Paintbrush, Eraser, User
+  Smile, Paintbrush, Eraser, User, Search, Maximize, Wand2
 } from 'lucide-react'
 
-const tools = [
+const toolCategories = [
   {
     category: 'PDF Core & Organization Tools',
     theme: 'text-red-500',
@@ -70,6 +72,8 @@ const tools = [
     theme: 'text-indigo-500',
     bg: 'hover:bg-indigo-50',
     items: [
+      { name: 'Photo Upscale', description: 'Enhance image resolution and clarity using client-side AI super-resolution.', icon: Maximize, link: '/ai/upscale' },
+      { name: 'Remove Background', description: 'Remove and change image backgrounds instantly using local AI processing.', icon: Wand2, link: '/ai/remove-bg' },
       { name: 'Meme Generator', description: 'Custom structural overlay environment to apply standard stylized bounding text over templates.', icon: Smile, link: '/ai/meme-generator' },
       { name: 'Photo Editor', description: 'Comprehensive studio canvas tool for sketching freehand paths, adding shapes, or deploying filters.', icon: Paintbrush, link: '/ai/photo-editor' },
       { name: 'Watermark IMAGE', description: 'Overlay transparent branding marks or text configurations in batch loops.', icon: Droplet, link: '/ai/watermark-image' },
@@ -80,31 +84,64 @@ const tools = [
 ]
 
 export default function Home() {
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const filteredCategories = toolCategories.map(category => ({
+    ...category,
+    items: category.items.filter(item => 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  })).filter(category => category.items.length > 0)
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
       <h1 className="text-4xl font-bold text-center mb-4 text-gray-800">Every tool you need to work with PDFs and Images</h1>
-      <h2 className="text-xl text-center text-gray-500 mb-12">100% Client-Side. Private, Fast, and Free. <span className="text-xs text-gray-300 ml-2">v1.2 Live</span></h2>
+      <h2 className="text-xl text-center text-gray-500 mb-8">100% Client-Side. Private, Fast, and Free. <span className="text-xs text-gray-300 ml-2">v1.2 Live</span></h2>
+
+      {/* Search Bar */}
+      <div className="max-w-2xl mx-auto mb-16 relative">
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+          <Search className="h-5 w-5 text-gray-400" />
+        </div>
+        <input
+          type="text"
+          placeholder="Search for a tool (e.g., 'merge', 'compress', 'background')..."
+          className="block w-full pl-12 pr-4 py-4 border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 text-lg transition-all"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
 
       <div className="space-y-12">
-        {tools.map((section, idx) => (
-          <div key={idx}>
-            <h3 className="text-2xl font-bold mb-6 border-b pb-2 text-gray-800">{section.category}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {section.items.map((tool, toolIdx) => {
-                const Icon = tool.icon
-                return (
-                  <Link href={tool.link} key={toolIdx} className={`block bg-white p-6 rounded-xl border border-gray-100 shadow-sm transition-all duration-200 hover:shadow-md ${section.bg} cursor-pointer`}>
-                    <div className="flex items-center space-x-4 mb-4">
-                      <Icon className={`w-10 h-10 ${section.theme}`} />
-                      <h4 className="text-xl font-bold text-gray-800">{tool.name}</h4>
-                    </div>
-                    <p className="text-gray-500 text-sm leading-relaxed">{tool.description}</p>
-                  </Link>
-                )
-              })}
+        {filteredCategories.length > 0 ? (
+          filteredCategories.map((section, idx) => (
+            <div key={idx}>
+              <h3 className="text-2xl font-bold mb-6 border-b pb-2 text-gray-800">{section.category}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {section.items.map((tool, toolIdx) => {
+                  const Icon = tool.icon
+                  return (
+                    <Link href={tool.link} key={toolIdx} className={`block bg-white p-6 rounded-xl border border-gray-100 shadow-sm transition-all duration-200 hover:shadow-md ${section.bg} cursor-pointer group`}>
+                      <div className="flex items-center space-x-4 mb-4">
+                        <Icon className={`w-10 h-10 ${section.theme} group-hover:scale-110 transition-transform`} />
+                        <h4 className="text-xl font-bold text-gray-800">{tool.name}</h4>
+                      </div>
+                      <p className="text-gray-500 text-sm leading-relaxed">{tool.description}</p>
+                    </Link>
+                  )
+                })}
+              </div>
             </div>
+          ))
+        ) : (
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4">🔍</div>
+            <h3 className="text-2xl font-bold text-gray-800">No tools found for &quot;{searchQuery}&quot;</h3>
+            <p className="text-gray-500 mt-2">Try searching for something else like &quot;PDF&quot; or &quot;Image&quot;.</p>
+            <button onClick={() => setSearchQuery('')} className="mt-6 text-red-600 font-bold hover:underline">Clear search</button>
           </div>
-        ))}
+        )}
       </div>
     </div>
   )

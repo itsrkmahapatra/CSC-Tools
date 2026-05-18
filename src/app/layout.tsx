@@ -4,8 +4,10 @@ import { Lock } from 'lucide-react'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'CSC Tools',
-  description: '100% Local Sandboxed Processing for PDF and Image Files.',
+  title: 'CSC Tools - 100% Private PDF & Image Utilities',
+  description: 'A comprehensive suite of 100% client-side, privacy-focused tools for PDF and Image processing. Merge, split, compress, convert, and edit files locally in your browser.',
+  keywords: 'PDF tools, image tools, private PDF editor, local file processing, merge PDF, compress image, OCR PDF, secure PDF utilities',
+  authors: [{ name: 'Raj Kishor Mahapatra' }],
 }
 
 export default function RootLayout({
