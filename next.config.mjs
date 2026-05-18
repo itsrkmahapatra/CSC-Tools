@@ -7,7 +7,10 @@ const nextConfig = {
     unoptimized: true,
   },
   transpilePackages: ['upscaler', '@tensorflow/tfjs', '@imgly/background-removal'],
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals.push('onnxruntime-node');
+    }
     config.module.rules.push({
       test: /\.mjs$/,
       include: /node_modules/,
