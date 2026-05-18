@@ -5,10 +5,10 @@ import WorkspaceLayout from '@/components/ui/WorkspaceLayout'
 import ErrorBoundary from '@/components/ui/ErrorBoundary'
 import * as ort from 'onnxruntime-web'
 
-// Configure WASM paths as a plain string
+// Configure WASM paths
 ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.0/dist/'
 
-export default function PhotoUpscale() {
+function UpscaleTool() {
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -27,16 +27,14 @@ export default function PhotoUpscale() {
     if (!file || !preview) return
     setIsProcessing(true)
     setProgress(10)
-
+    
     try {
-      // Use explicit string path
       const modelUrl = '/CSC-Tools/models/super_resolution_quantized.onnx'
 
       const session = await ort.InferenceSession.create(modelUrl, {
         executionProviders: ['webgpu', 'webgl', 'wasm']
       })
       setProgress(30)
-
 
       const img = new Image()
       img.src = preview
@@ -74,7 +72,7 @@ export default function PhotoUpscale() {
       setProgress(100)
     } catch (e) {
       console.error("AI Upscale failed:", e)
-      throw e // Trigger Error Boundary
+      throw e
     } finally {
       setIsProcessing(false)
     }
