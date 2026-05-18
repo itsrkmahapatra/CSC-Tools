@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🛠️ CSC Tools
 
-## Getting Started
+## 🎯 Overview
+CSC Tools is a comprehensive, privacy-first suite of client-side utilities for advanced PDF and Image processing. Built with modern web technologies, it ensures that all file operations occur locally in your browser, providing maximum security and speed without the need for server-side uploads.
 
-First, run the development server:
+## ✨ Key Features
+- **Advanced PDF Suite**: Merge, split, organize, rotate, crop, and repair PDF documents with ease.
+- **PDF Security & Optimization**: Compress, protect (AES-256), unlock, and sign PDF files locally.
+- **Image Processing Matrix**: Professional tools for resizing, cropping, flipping, and metadata viewing.
+- **OCR & Conversion**: Extract text from images using WASM-based OCR and convert between multiple formats (JPG, PDF, HTML).
+- **AI-Powered Visual Tools**: Generate memes, edit photos, and blur faces using advanced client-side algorithms.
+- **100% Client-Side**: Your files never leave your computer, ensuring absolute data privacy.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🚀 Get Started
+**Access the live portal:**
+[👉 Launch CSC Tools Live Portal](https://itsrkmahapatra.github.io/CSC-Tools/)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Choose from over 30+ specialized tools to process your PDF and Image files instantly and securely within your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠️ Technology Stack
+- Next.js 14 (App Router)
+- TypeScript (Type Safety)
+- Tailwind CSS (Modern Styling)
+- WebAssembly (OCR & Processing)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📜 License & Copyright
+© 2026 Raj Kishor Mahapatra. All Rights Reserved.
 
-## Learn More
+**License:** Proprietary License
+- ✅ Allowed: Access and use through the live portal
+- ❌ Prohibited: Modification, commercial sale, or code reproduction
 
-To learn more about Next.js, take a look at the following resources:
+For inquiries: raju.chikitigada@gmail.com
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🤝 About the Developer
+Developed by **Raj Kishor Mahapatra** - Full-Stack Developer, AI Enthusiast, Open-Source Contributor
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+*For more projects, visit: https://github.com/itsrkmahapatra*
