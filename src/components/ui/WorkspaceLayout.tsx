@@ -7,12 +7,20 @@ interface WorkspaceLayoutProps {
   sidebarContent: ReactNode
   onProcess: () => void
   processLabel?: string
-  colorTheme?: 'red' | 'blue'
+  colorTheme?: 'red' | 'blue' | 'indigo' | 'teal' | 'orange' | 'rose'
   isProcessing?: boolean
 }
 
 export default function WorkspaceLayout({ children, sidebarContent, onProcess, processLabel = "Process", colorTheme = "red", isProcessing = false }: WorkspaceLayoutProps) {
-  const themeClass = colorTheme === 'red' ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'
+  const themes = {
+    red: 'bg-red-500 hover:bg-red-600',
+    blue: 'bg-blue-500 hover:bg-blue-600',
+    indigo: 'bg-indigo-500 hover:bg-indigo-600',
+    teal: 'bg-teal-500 hover:bg-teal-600',
+    orange: 'bg-orange-500 hover:bg-orange-600',
+    rose: 'bg-rose-500 hover:bg-rose-600',
+  }
+  const themeClass = themes[colorTheme] || themes.red
   
   return (
     <div className="flex flex-col md:flex-row min-h-[calc(100vh-120px)] w-full bg-gray-200 overflow-hidden">

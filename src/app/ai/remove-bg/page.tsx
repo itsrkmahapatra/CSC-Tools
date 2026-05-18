@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import Dropzone from '@/components/ui/Dropzone'
 import WorkspaceLayout from '@/components/ui/WorkspaceLayout'
-import removeBackground from '@imgly/background-removal'
+import { removeBackground } from '@imgly/background-removal'
 import { Wand2, Image as ImageIcon, Download } from 'lucide-react'
 
 export default function RemoveBackground() {
