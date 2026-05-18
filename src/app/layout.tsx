@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { Lock } from 'lucide-react'
 import Link from 'next/link'
+import Script from 'next/script'
 
 export const metadata: Metadata = {
   title: 'CSC Tools - 100% Private PDF & Image Utilities',
@@ -55,7 +56,7 @@ export default function RootLayout({
             <Link href="/disclaimer" className="hover:text-red-600 underline">Disclaimer</Link>
           </div>
         </footer>
-        <script src={`${process.env.NEXT_PUBLIC_BASE_PATH || '/CSC-Tools'}/js/upi-widget.js`}></script>
+        <Script src={`${process.env.NEXT_PUBLIC_BASE_PATH || '/CSC-Tools'}/js/upi-widget.js`} strategy="lazyOnload" />
       </body>
     </html>
   )
