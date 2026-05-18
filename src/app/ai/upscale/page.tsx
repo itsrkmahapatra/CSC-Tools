@@ -2,12 +2,13 @@
 import { useState } from 'react'
 import Dropzone from '@/components/ui/Dropzone'
 import WorkspaceLayout from '@/components/ui/WorkspaceLayout'
+import ErrorBoundary from '@/components/ui/ErrorBoundary'
 import * as ort from 'onnxruntime-web'
 
 // Configure WASM paths
 ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.0/dist/'
 
-export default function PhotoUpscale() {
+function UpscaleTool() {
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -28,7 +29,8 @@ export default function PhotoUpscale() {
     setProgress(10)
     
     try {
-      const session = await ort.InferenceSession.create('./models/super_resolution_quantized.onnx', {
+      // Use absolute path relative to the public root
+      const session = await ort.InferenceSession.create('/CSC-Tools/models/super_resolution_quantized.onnx', {
         executionProviders: ['webgpu', 'webgl', 'wasm']
       })
       setProgress(30)
@@ -69,7 +71,7 @@ export default function PhotoUpscale() {
       setProgress(100)
     } catch (e) {
       console.error("AI Upscale failed:", e)
-      alert("AI Upscaling failed. Ensure model file is present at ./models/super_resolution_quantized.onnx")
+      throw e // Trigger Error Boundary
     } finally {
       setIsProcessing(false)
     }
@@ -103,7 +105,7 @@ export default function PhotoUpscale() {
       isProcessing={isProcessing}
       sidebarContent={
         <div className="space-y-6">
-          <p className="text-xs text-gray-500">Note: Requires model file in the ./models/ directory.</p>
+          <p className="text-xs text-gray-500">Note: Requires model file in the ./public/models/ directory.</p>
           {isProcessing && (
             <div className="bg-indigo-50 p-4 rounded border border-indigo-200">
               <p className="text-xs font-bold text-indigo-800 mb-2 animate-pulse text-center">Processing AI Model...</p>
@@ -118,7 +120,6 @@ export default function PhotoUpscale() {
       }
     >
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 h-full">
-        {/* Simplified preview to satisfy linting */}
         <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100 flex items-center justify-center">
             {preview && <img src={preview} alt="Original" className="max-w-full max-h-full object-contain" />}
         </div>
@@ -127,5 +128,13 @@ export default function PhotoUpscale() {
         </div>
       </div>
     </WorkspaceLayout>
+  )
+}
+
+export default function PhotoUpscale() {
+  return (
+    <ErrorBoundary>
+      <UpscaleTool />
+    </ErrorBoundary>
   )
 }
