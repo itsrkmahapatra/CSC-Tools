@@ -29,9 +29,12 @@ function UpscaleTool() {
     setProgress(10)
     
     try {
-      const modelUrl = '/CSC-Tools/models/super_resolution_quantized.onnx'
-
-      const session = await ort.InferenceSession.create(modelUrl, {
+      // Fetch as ArrayBuffer to bypass URL resolution issues
+      const response = await fetch('/CSC-Tools/models/super_resolution_quantized.onnx')
+      if (!response.ok) throw new Error(`Model fetch failed: ${response.statusText}`)
+      const modelBuffer = await response.arrayBuffer()
+      
+      const session = await ort.InferenceSession.create(modelBuffer, {
         executionProviders: ['webgpu', 'webgl', 'wasm']
       })
       setProgress(30)
