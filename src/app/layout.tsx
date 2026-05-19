@@ -56,7 +56,7 @@ export default function RootLayout({
             <Link href="/disclaimer" className="hover:text-red-600 underline">Disclaimer</Link>
           </div>
         </footer>
-        <Script src="/CSC-Tools/js/upi-widget.js" strategy="afterInteractive" />
+        <script src="/CSC-Tools/js/upi-widget.js?v=1.4" defer></script>
       </body>
     </html>
   )
