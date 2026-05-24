@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic'
 import Dropzone from '@/components/ui/Dropzone'
 import WorkspaceLayout from '@/components/ui/WorkspaceLayout'
 import ErrorBoundary from '@/components/ui/ErrorBoundary'
-import { Wand2, Image as ImageIcon, Download, AlertCircle, Loader2 } from 'lucide-react'
+import { Wand2, Image as ImageIcon, AlertCircle, Loader2 } from 'lucide-react'
 
 function RemoveBGTool() {
   const [file, setFile] = useState<File | null>(null)
@@ -16,6 +16,7 @@ function RemoveBGTool() {
   const [error, setError] = useState<string | null>(null)
   const [modelLoaded, setModelLoaded] = useState(false)
   
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const segmenterRef = useRef<any>(null)
 
   // Initialize TF.js and Load Model on mount
@@ -117,6 +118,7 @@ function RemoveBGTool() {
       rCtx?.drawImage(maskCanvas, 0, 0)
 
       setResult(resultCanvas.toDataURL('image/png'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       console.error("Processing failed:", e)
       setError("Background removal failed. Error: " + (e.message || "Unknown error"))
