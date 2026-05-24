@@ -41,8 +41,8 @@ function RemoveBGTool() {
       })
       const url = URL.createObjectURL(blob)
       setResult(url)
-    } catch (e: any) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (e: any) {
       console.error("Background removal error:", e)
       setError(e.message || "Failed to initialize AI engine. Please ensure your browser supports WebAssembly.")
     } finally {
