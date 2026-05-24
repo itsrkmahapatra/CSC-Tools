@@ -1,41 +1,49 @@
 'use client'
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import Dropzone from '@/components/ui/Dropzone'
 import WorkspaceLayout from '@/components/ui/WorkspaceLayout'
-import { removeBackground } from '@imgly/background-removal'
-import { Wand2, Image as ImageIcon, Download } from 'lucide-react'
+import ErrorBoundary from '@/components/ui/ErrorBoundary'
+import { Wand2, Image as ImageIcon, Download, AlertCircle } from 'lucide-react'
 
-export default function RemoveBackground() {
+function RemoveBGTool() {
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [result, setResult] = useState<string | null>(null)
   const [bgColor, setBgColor] = useState<string>('transparent')
   const [bgImage, setBgImage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const handleFilesDrop = (droppedFiles: File[]) => {
     const f = droppedFiles[0]
     setFile(f)
     setPreview(URL.createObjectURL(f))
     setResult(null)
+    setError(null)
   }
 
   const handleProcess = async () => {
     if (!file) return
     setIsProcessing(true)
+    setError(null)
     try {
+      // Use dynamic import for the engine to avoid SSR issues
+      const { removeBackground } = await import('@imgly/background-removal')
+      
       const blob = await removeBackground(file, {
-        publicPath: '/Docuvate/imgly/',
+        // Use official CDN for maximum browser compatibility and reliability
+        publicPath: 'https://static.img.ly/packages/@imgly/background-removal@1.7.0/dist/',
         debug: true,
         progress: (status, progress) => {
-          console.log(status, progress)
+          console.log(`[RemoveBG] ${status}: ${Math.round(progress * 100)}%`)
         }
       })
       const url = URL.createObjectURL(blob)
       setResult(url)
-    } catch (e) {
-      console.error(e)
-      alert("Background removal failed. This tool requires a modern browser with WebAssembly support.")
+    } catch (e: any) {
+      console.error("Background removal error:", e)
+      setError(e.message || "Failed to initialize AI engine. Please ensure your browser supports WebAssembly.")
     } finally {
       setIsProcessing(false)
     }
@@ -44,18 +52,16 @@ export default function RemoveBackground() {
   const handleDownload = () => {
     if (!result) return
     
-    // If transparent and no BG image, just download the result
     if (bgColor === 'transparent' && !bgImage) {
       const a = document.createElement('a')
       a.href = result
-      a.download = `no-bg-${file?.name}`
+      a.download = `no-bg-${file?.name || 'image'}.png`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
       return
     }
 
-    // Composite on canvas
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')
     const img = new Image()
@@ -84,7 +90,7 @@ export default function RemoveBackground() {
   const downloadCanvas = (canvas: HTMLCanvasElement) => {
     const a = document.createElement('a')
     a.href = canvas.toDataURL('image/png')
-    a.download = `custom-bg-${file?.name}`
+    a.download = `custom-bg-${file?.name || 'image'}.png`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -149,17 +155,25 @@ export default function RemoveBackground() {
           {isProcessing && (
             <div className="bg-indigo-50 p-4 rounded border border-indigo-200">
               <p className="text-xs font-bold text-indigo-800 mb-2 animate-pulse text-center">Processing AI Model...</p>
-              <p className="text-[10px] text-gray-500 text-center">This may take 10-20 seconds depending on your device.</p>
+              <p className="text-[10px] text-gray-500 text-center">This may take 10-30 seconds. Large images take longer.</p>
             </div>
           )}
 
-          <button onClick={() => { setFile(null); setResult(null); setPreview(null); setBgImage(null); setBgColor('transparent') }} disabled={isProcessing} className="text-sm text-red-500 hover:underline">Clear & Reset</button>
+          {error && (
+            <div className="bg-red-50 p-4 rounded border border-red-200 flex flex-col items-center">
+              <AlertCircle className="w-8 h-8 text-red-500 mb-2" />
+              <p className="text-xs text-red-800 text-center font-medium">{error}</p>
+              <button onClick={handleProcess} className="mt-2 text-xs font-bold text-red-600 hover:underline uppercase">Retry</button>
+            </div>
+          )}
+
+          <button onClick={() => { setFile(null); setResult(null); setPreview(null); setBgImage(null); setBgColor('transparent'); setError(null); }} disabled={isProcessing} className="text-sm text-red-500 hover:underline">Clear & Reset</button>
         </div>
       }
     >
       <div className="w-full flex flex-col items-center">
         <div 
-          className="relative bg-white p-4 shadow-xl border-8 border-white rounded-lg overflow-hidden max-w-2xl w-full"
+          className="relative bg-white p-4 shadow-xl border-8 border-white rounded-lg overflow-hidden max-w-2xl w-full min-h-[300px]"
           style={{ 
             backgroundColor: bgColor === 'transparent' ? '#f3f4f6' : (bgColor === 'custom' ? 'transparent' : bgColor),
             backgroundImage: bgColor === 'transparent' ? 'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAAXNSR0IArs4c6QAAACpJREFUGFdjZEADJgY0QC6AkgAJAAnIAtkgCSQBWSALJIEkIAtkAwM2BQCz8A8LJ0Y4GAAAAABJRU5ErkJggg==")' : (bgImage ? `url(${bgImage})` : undefined),
@@ -168,11 +182,9 @@ export default function RemoveBackground() {
           }}
         >
           {result ? (
-            // eslint-disable-next-line @next/next/no-img-element
             <img src={result} alt="Result" className="block max-w-full h-auto mx-auto animate-in fade-in zoom-in duration-700" />
           ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={preview!} alt="Original" className="block max-w-full h-auto mx-auto opacity-50 grayscale" />
+            <img src={preview!} alt="Original" className={`block max-w-full h-auto mx-auto ${isProcessing ? 'opacity-50 grayscale animate-pulse' : 'opacity-80 grayscale'}`} />
           )}
           
           {!result && !isProcessing && (
@@ -195,5 +207,17 @@ export default function RemoveBackground() {
         )}
       </div>
     </WorkspaceLayout>
+  )
+}
+
+const RemoveBackground = dynamic(() => Promise.resolve(RemoveBGTool), {
+  ssr: false
+})
+
+export default function Page() {
+  return (
+    <ErrorBoundary>
+      <RemoveBackground />
+    </ErrorBoundary>
   )
 }
