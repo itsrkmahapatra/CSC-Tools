@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
-  basePath: '/CSC-Tools',
+  basePath: '/Docuvate',
   trailingSlash: true,
   images: {
     unoptimized: true,
@@ -21,3 +21,4 @@ const nextConfig = {
 };
 
 export default nextConfig;
+

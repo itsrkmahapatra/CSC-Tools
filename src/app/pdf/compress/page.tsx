@@ -19,8 +19,8 @@ export default function CompressPDF() {
   }, [file])
 
   useEffect(() => {
-    // Note: Due to basePath, the worker is loaded from /CSC-Tools/
-    workerRef.current = new Worker('/CSC-Tools/compressor.worker.js')
+    // Note: Due to basePath, the worker is loaded from /Docuvate/
+    workerRef.current = new Worker('/Docuvate/compressor.worker.js')
     
     workerRef.current.onmessage = (e) => {
       const { type, message, percent, buffer, error } = e.data
@@ -129,3 +129,4 @@ export default function CompressPDF() {
     </WorkspaceLayout>
   )
 }
+

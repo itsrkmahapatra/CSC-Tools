@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://itsrkmahapatra.github.io/CSC-Tools/sitemap.xml
+Sitemap: https://itsrkmahapatra.github.io/Docuvate/sitemap.xml
+

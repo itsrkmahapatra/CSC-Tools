@@ -30,7 +30,7 @@ function UpscaleTool() {
     
     try {
       // Fetch as ArrayBuffer to bypass URL resolution issues
-      const response = await fetch('/CSC-Tools/models/super_resolution_quantized.onnx')
+      const response = await fetch('/Docuvate/models/super_resolution_quantized.onnx')
       if (!response.ok) throw new Error(`Model fetch failed: ${response.statusText}`)
       const modelBuffer = await response.arrayBuffer()
       
@@ -142,3 +142,4 @@ export default function PhotoUpscale() {
     </ErrorBoundary>
   )
 }
+

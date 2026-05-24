@@ -1,8 +1,8 @@
 {
-  "name": "csc-tools",
+  "name": "Docuvate",
   "version": "1.2.0",
   "private": true,
-  "homepage": "https://itsrkmahapatra.github.io/CSC-Tools",
+  "homepage": "https://itsrkmahapatra.github.io/Docuvate",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -48,3 +48,4 @@
     "typescript": "^5"
   }
 }
+
