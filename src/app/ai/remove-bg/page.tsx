@@ -103,8 +103,7 @@ function RemoveBGTool() {
       renderFinal(canvas)
     } catch (e: any) {
       console.error("High-precision processing failed:", e)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setError((e as any).message || "AI failed to process image.")
+      setError("AI failed to process image.")
     } finally {
       setIsProcessing(false)
     }
