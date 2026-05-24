@@ -124,23 +124,25 @@ function RemoveBGTool() {
     const ctx = canvas.getContext('2d', { alpha: true })
     if (!ctx) return
 
+    // Ensure canvas dimensions 100% match original image
     canvas.width = img.width
     canvas.height = img.height
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    // 1. Prepare smoothed mask
+    // 1. Prepare smoothed mask in memory
     const tempMask = document.createElement('canvas')
     tempMask.width = canvas.width
     tempMask.height = canvas.height
     const tCtx = tempMask.getContext('2d')
-    if (tCtx && edgeBlur > 0) {
-      tCtx.filter = `blur(${edgeBlur}px)`
+    if (tCtx) {
+      if (edgeBlur > 0) tCtx.filter = `blur(${edgeBlur}px)`
+      tCtx.drawImage(currentMask, 0, 0)
     }
-    tCtx?.drawImage(currentMask, 0, 0)
 
-    // 2. Draw Background (Image or Color)
+    // 2. Draw Background (Color or custom Image)
     if (bgImage) {
         const bImg = new Image()
+        bImg.crossOrigin = "anonymous"
         bImg.src = bgImage
         await new Promise((resolve) => { bImg.onload = resolve; })
         ctx.drawImage(bImg, 0, 0, canvas.width, canvas.height)
@@ -149,7 +151,7 @@ function RemoveBGTool() {
         ctx.fillRect(0, 0, canvas.width, canvas.height)
     }
 
-    // 3. Create clipped foreground in memory
+    // 3. Prepare Subject Foreground (Clipped by mask)
     const fgCanvas = document.createElement('canvas')
     fgCanvas.width = canvas.width
     fgCanvas.height = canvas.height
@@ -160,7 +162,7 @@ function RemoveBGTool() {
       fgCtx.drawImage(tempMask, 0, 0)
     }
 
-    // 4. Apply Subject Shadow if requested
+    // 4. Draw Shadow beneath the subject
     if (shadow > 0) {
       ctx.shadowColor = `rgba(0,0,0,${shadowOpacity})`
       ctx.shadowBlur = shadow
@@ -168,18 +170,19 @@ function RemoveBGTool() {
       ctx.shadowOffsetY = shadow / 4
     }
 
-    // 5. Compose subject on background
+    // 5. Place subject on background
     ctx.drawImage(fgCanvas, 0, 0)
     
+    // 6. Finalize preview result
     setResult(canvas.toDataURL('image/png'))
   }, [bgColor, bgImage, edgeBlur, shadow, shadowOpacity])
 
-  // Re-render when options or mask changes
+  // Re-render when any adjustment parameter or the mask itself changes
   useEffect(() => {
     if (maskCanvas) {
       renderFinal(maskCanvas)
     }
-  }, [maskCanvas, bgColor, bgImage, edgeBlur, shadow, renderFinal])
+  }, [maskCanvas, bgColor, bgImage, edgeBlur, shadow, shadowOpacity, renderFinal])
 
   const handleDownload = () => {
     if (!result) return
