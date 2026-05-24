@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic'
 import Dropzone from '@/components/ui/Dropzone'
 import WorkspaceLayout from '@/components/ui/WorkspaceLayout'
 import ErrorBoundary from '@/components/ui/ErrorBoundary'
-import { Maximize, Download, AlertCircle, Loader2, Sparkles, Settings2 } from 'lucide-react'
+import { Maximize, AlertCircle, Loader2, Settings2 } from 'lucide-react'
 
 type ScaleFactor = 2 | 3 | 4
 type ModelEngine = 'slim' | 'thick'
@@ -37,7 +37,7 @@ function UpscaleTool() {
         const Upscaler = (await import('upscaler')).default
         
         let modelModule;
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires */
         if (engine === 'slim') {
           if (scale === 2) modelModule = require('@upscalerjs/esrgan-slim/2x').default
           else if (scale === 3) modelModule = require('@upscalerjs/esrgan-slim/3x').default
@@ -47,6 +47,7 @@ function UpscaleTool() {
           else if (scale === 3) modelModule = require('@upscalerjs/esrgan-thick/3x').default
           else modelModule = require('@upscalerjs/esrgan-thick/4x').default
         }
+        /* eslint-enable @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires */
 
         await tf.setBackend('webgl')
         await tf.ready()
