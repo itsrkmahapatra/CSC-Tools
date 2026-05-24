@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic'
 import Dropzone from '@/components/ui/Dropzone'
 import WorkspaceLayout from '@/components/ui/WorkspaceLayout'
 import ErrorBoundary from '@/components/ui/ErrorBoundary'
-import { Wand2, Image as ImageIcon, Download, AlertCircle, Loader2, Eraser, Paintbrush, Sliders, Scissors, Sun, Ghost } from 'lucide-react'
+import { Wand2, Image as ImageIcon, Download, Loader2, Sliders, Ghost } from 'lucide-react'
 
 function RemoveBGTool() {
   const [file, setFile] = useState<File | null>(null)
@@ -17,17 +17,15 @@ function RemoveBGTool() {
   const [bgImage, setBgImage] = useState<string | null>(null)
   const [edgeBlur, setEdgeBlur] = useState<number>(2)
   const [shadow, setShadow] = useState<number>(0)
-  const [brightness, setShadowOpacity] = useState<number>(0.3)
+  const [brightness] = useState<number>(0.3)
   
   // Mask Refinement (Manual Brush)
   const [maskCanvas, setMaskCanvas] = useState<HTMLCanvasElement | null>(null)
-  const [isRefining, setIsRefining] = useState(false)
-  const [brushMode, setBrushMode] = useState<'add' | 'erase'>('erase')
-  const [brushSize, setBrushSize] = useState<number>(30)
 
   const [error, setError] = useState<string | null>(null)
   const [modelLoaded, setModelLoaded] = useState(false)
   
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const segmenterRef = useRef<any>(null)
   const mainCanvasRef = useRef<HTMLCanvasElement>(null)
   const originalImageRef = useRef<HTMLImageElement | null>(null)
@@ -108,6 +106,7 @@ function RemoveBGTool() {
       renderFinal(canvas)
     } catch (e: any) {
       console.error("High-precision processing failed:", e)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setError("AI failed to process image. Error: " + (e.message || "Model Timeout"))
     } finally {
       setIsProcessing(false)
@@ -148,9 +147,7 @@ function RemoveBGTool() {
     fgCtx?.drawImage(tempMask, 0, 0)
 
     // 3. Draw Background
-    if (bgImage) {
-        // We'd need to load bgImage properly here, but for preview we use CSS
-    } else if (bgColor !== 'transparent') {
+    if (bgColor !== 'transparent') {
         ctx.fillStyle = bgColor
         ctx.fillRect(0, 0, canvas.width, canvas.height)
     }
@@ -165,7 +162,7 @@ function RemoveBGTool() {
 
     ctx.drawImage(fgCanvas, 0, 0)
     setResult(canvas.toDataURL('image/png'))
-  }, [bgColor, bgImage, edgeBlur, shadow, brightness])
+  }, [bgColor, edgeBlur, shadow, brightness])
 
   // Re-render when effects change
   useEffect(() => {
@@ -199,7 +196,7 @@ function RemoveBGTool() {
           <div className="flex flex-col items-center justify-center p-12 bg-white rounded-3xl shadow-sm border max-w-md mx-auto">
             <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
             <p className="text-gray-600 font-medium text-center uppercase tracking-tighter">Initializing Neural Network...</p>
-            <p className="text-[10px] text-gray-400 mt-2">ResNet50 Precision Engine (Requires GPU)</p>
+            <p className="text-[10px] text-gray-400 mt-2 text-center">ResNet50 Precision Engine (Requires GPU)</p>
           </div>
         ) : (
           <Dropzone onFilesDrop={handleFilesDrop} accept="image/*" multiple={false} theme="indigo" label="Select Image for Precision Removal" />
@@ -295,7 +292,7 @@ function RemoveBGTool() {
           {isProcessing && (
              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/20 backdrop-blur-sm">
                 <Loader2 className="w-16 h-16 text-indigo-600 animate-spin mb-4" />
-                <p className="text-indigo-900 font-black uppercase tracking-widest text-sm">Mapping Pixels...</p>
+                <p className="text-indigo-900 font-black uppercase tracking-widest text-sm text-center">Mapping Pixels...</p>
              </div>
           )}
         </div>
