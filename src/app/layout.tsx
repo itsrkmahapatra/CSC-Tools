@@ -2,10 +2,9 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { Lock } from 'lucide-react'
 import Link from 'next/link'
-import Script from 'next/script'
 
 export const metadata: Metadata = {
-  title: 'CSC Tools - 100% Private PDF & Image Utilities',
+  title: 'Docuvate - 100% Private PDF & Image Utilities',
   description: 'A comprehensive suite of 100% client-side, privacy-focused tools for PDF and Image processing. Merge, split, compress, convert, and edit files locally in your browser.',
   keywords: 'PDF tools, image tools, private PDF editor, local file processing, merge PDF, compress image, OCR PDF, secure PDF utilities',
   authors: [{ name: 'Raj Kishor Mahapatra' }],
@@ -43,7 +42,7 @@ export default function RootLayout({
         </header>
         <div className="bg-white border-b py-4 px-8 shadow-sm">
           <Link href="/" className="text-2xl font-black text-red-600 tracking-tight flex items-center gap-2 w-max cursor-pointer hover:opacity-80 transition-opacity">
-            <span className="bg-red-600 text-white px-2 py-1 rounded-md">CSC</span> Tools
+            <span className="bg-red-600 text-white px-2 py-1 rounded-md">Doc</span> uvate
           </Link>
         </div>
         <main className="flex-grow">
