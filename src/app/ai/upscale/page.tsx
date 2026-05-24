@@ -6,8 +6,8 @@ import WorkspaceLayout from '@/components/ui/WorkspaceLayout'
 import ErrorBoundary from '@/components/ui/ErrorBoundary'
 import { Maximize, AlertCircle, Loader2, Settings2 } from 'lucide-react'
 
-type ScaleFactor = 2 | 3 | 4
-type ModelEngine = 'slim' | 'thick'
+type ScaleFactor = 1 | 2 | 3 | 4
+type ModelEngine = 'slim' | 'thick' | 'denoise' | 'deblur'
 
 function UpscaleTool() {
   const [file, setFile] = useState<File | null>(null)
@@ -42,10 +42,14 @@ function UpscaleTool() {
           if (scale === 2) modelModule = require('@upscalerjs/esrgan-slim/2x').default
           else if (scale === 3) modelModule = require('@upscalerjs/esrgan-slim/3x').default
           else modelModule = require('@upscalerjs/esrgan-slim/4x').default
-        } else {
+        } else if (engine === 'thick') {
           if (scale === 2) modelModule = require('@upscalerjs/esrgan-thick/2x').default
           else if (scale === 3) modelModule = require('@upscalerjs/esrgan-thick/3x').default
           else modelModule = require('@upscalerjs/esrgan-thick/4x').default
+        } else if (engine === 'denoise') {
+          modelModule = require('@upscalerjs/maxim-denoising').default
+        } else if (engine === 'deblur') {
+          modelModule = require('@upscalerjs/maxim-deblurring').default
         }
         /* eslint-enable @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires */
 
@@ -57,7 +61,7 @@ function UpscaleTool() {
         })
         
         setUpscalerLoaded(true)
-        console.log(`[Upscale] AI Engine Ready: ${engine} ${scale}x`)
+        console.log(`[Upscale] AI Engine Ready: ${engine}`)
       } catch (e) {
         console.error("AI Initialization failed:", e)
         setError("Failed to load AI model. Try selecting a different scale or engine.")
@@ -105,7 +109,7 @@ function UpscaleTool() {
     if (!result) return
     const a = document.createElement('a')
     a.href = result
-    a.download = `docuvate-${scale}x-${file?.name || 'image'}.png`
+    a.download = `docuvate-${engine}-${file?.name || 'image'}.png`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -114,19 +118,19 @@ function UpscaleTool() {
   if (!file) {
     return (
       <div className="py-24">
-        <h1 className="text-4xl font-bold text-center text-gray-800 mb-4">AI Photo Upscale</h1>
-        <p className="text-center text-gray-500 mb-8 px-4 max-w-2xl mx-auto">
-          Pro-grade image enhancement powered by ESRGAN. 
-          Choose your scale and engine—everything runs 100% locally.
+        <h1 className="text-4xl font-bold text-center text-gray-800 mb-4">AI Photo Upscale & Restoration</h1>
+        <p className="text-center text-gray-500 mb-8 px-4 max-w-3xl mx-auto leading-relaxed">
+          Modern upscaling uses a trained neural network to guess and generate realistic details that are missing from a low-resolution image. 
+          Instead of just stretching out existing pixels, our AI analyzes the context and creates entirely new detail from scratch—100% locally on your device.
         </p>
         {!upscalerLoaded && !error ? (
           <div className="flex flex-col items-center justify-center p-12 bg-white rounded-3xl shadow-sm border max-w-md mx-auto">
             <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
-            <p className="text-gray-600 font-medium">Preparing AI Engine...</p>
-            <p className="text-[10px] text-gray-400 mt-2 text-center uppercase tracking-widest">Optimizing GPU shaders</p>
+            <p className="text-gray-600 font-medium">Preparing AI Neural Network...</p>
+            <p className="text-[10px] text-gray-400 mt-2 text-center uppercase tracking-widest font-black">Optimizing for GPU acceleration</p>
           </div>
         ) : (
-          <Dropzone onFilesDrop={handleFilesDrop} accept="image/*" multiple={false} theme="indigo" label="Select Image to Upscale" />
+          <Dropzone onFilesDrop={handleFilesDrop} accept="image/*" multiple={false} theme="indigo" label="Select Image to Restore" />
         )}
       </div>
     )
@@ -135,7 +139,7 @@ function UpscaleTool() {
   return (
     <WorkspaceLayout 
       onProcess={result ? handleDownload : handleProcess} 
-      processLabel={result ? "Download Image" : (isProcessing ? "Processing..." : "Start AI Upscale")} 
+      processLabel={result ? "Download Result" : (isProcessing ? "Analyzing..." : "Process with AI")} 
       colorTheme="indigo"
       isProcessing={isProcessing}
       sidebarContent={
@@ -143,52 +147,61 @@ function UpscaleTool() {
           <div className="bg-indigo-600 p-5 rounded-2xl text-white shadow-lg">
              <div className="flex items-center gap-2 mb-2">
                 <Settings2 className="w-5 h-5" />
-                <h3 className="font-black text-xs uppercase tracking-tight">Upscale Settings</h3>
+                <h3 className="font-black text-xs uppercase tracking-tight">AI Configurations</h3>
              </div>
              
              <div className="space-y-4 mt-4">
                 <div>
-                  <label className="text-[10px] font-bold uppercase opacity-70 mb-2 block">Scale Factor</label>
-                  <div className="flex bg-indigo-700 p-1 rounded-lg">
-                    {[2, 3, 4].map((s) => (
-                      <button 
-                        key={s} 
-                        onClick={() => setScale(s as ScaleFactor)}
-                        disabled={isProcessing}
-                        className={`flex-1 py-1 text-xs font-black rounded-md transition-all ${scale === s ? 'bg-white text-indigo-600 shadow-sm' : 'hover:bg-indigo-500 text-white opacity-80'}`}
-                      >
-                        {s}X
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-bold uppercase opacity-70 mb-2 block">AI Engine</label>
+                  <label className="text-[10px] font-bold uppercase opacity-70 mb-2 block">Processing Engine</label>
                   <select 
                     value={engine} 
-                    onChange={(e) => setEngine(e.target.value as ModelEngine)}
+                    onChange={(e) => {
+                      const val = e.target.value as ModelEngine;
+                      setEngine(val);
+                      if (val === 'denoise' || val === 'deblur') setScale(1);
+                      else setScale(2);
+                    }}
                     disabled={isProcessing}
                     className="w-full bg-indigo-700 text-white text-xs font-bold p-2 rounded-lg border-none outline-none cursor-pointer"
                   >
-                    <option value="slim">Standard (Balanced)</option>
-                    <option value="thick">Ultra (Best Quality)</option>
+                    <option value="slim">Super Resolution (Fast)</option>
+                    <option value="thick">Super Resolution (Ultra)</option>
+                    <option value="denoise">MAXIM Noise Reduction (1x)</option>
+                    <option value="deblur">MAXIM Motion Deblur (1x)</option>
                   </select>
                 </div>
 
+                {(engine === 'slim' || engine === 'thick') && (
+                  <div>
+                    <label className="text-[10px] font-bold uppercase opacity-70 mb-2 block">Scale Factor</label>
+                    <div className="flex bg-indigo-700 p-1 rounded-lg">
+                      {[2, 3, 4].map((s) => (
+                        <button 
+                          key={s} 
+                          onClick={() => setScale(s as ScaleFactor)}
+                          disabled={isProcessing}
+                          className={`flex-1 py-1 text-xs font-black rounded-md transition-all ${scale === s ? 'bg-white text-indigo-600 shadow-sm' : 'hover:bg-indigo-500 text-white opacity-80'}`}
+                        >
+                          {s}X
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div>
-                  <label className="text-[10px] font-bold uppercase opacity-70 mb-2 block">Patch Size</label>
+                  <label className="text-[10px] font-bold uppercase opacity-70 mb-2 block">Patch Size (GPU Tiles)</label>
                   <select 
                     value={patchSize} 
                     onChange={(e) => setPatchSize(parseInt(e.target.value))}
                     disabled={isProcessing}
                     className="w-full bg-indigo-700 text-white text-xs font-bold p-2 rounded-lg border-none outline-none cursor-pointer"
                   >
-                    <option value="32">32 (Safest / Slower)</option>
+                    <option value="32">32 (Compatibility)</option>
                     <option value="64">64 (Recommended)</option>
-                    <option value="128">128 (Faster / High VRAM)</option>
+                    <option value="128">128 (High Speed)</option>
                   </select>
-                  <p className="text-[8px] mt-1 opacity-60">Smaller patches prevent browser crashes on large images.</p>
+                  <p className="text-[8px] mt-1 opacity-60">Smaller patches prevent crashes on high-res images.</p>
                 </div>
              </div>
           </div>
@@ -196,20 +209,20 @@ function UpscaleTool() {
           {isProcessing && (
             <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-200">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-black text-indigo-800 uppercase">Upscaling...</p>
+                <p className="text-xs font-black text-indigo-800 uppercase">AI Inference...</p>
                 <p className="text-xs font-bold text-indigo-600">{progress}%</p>
               </div>
               <div className="w-full bg-indigo-200 rounded-full h-2">
                 <div className="bg-indigo-600 h-2 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
               </div>
-              <p className="text-[9px] text-gray-400 mt-2 uppercase text-center font-bold">GPU Active • {engine.toUpperCase()} Mode</p>
+              <p className="text-[9px] text-gray-400 mt-2 uppercase text-center font-bold">GPU Active • {engine.toUpperCase()} Engine</p>
             </div>
           )}
 
           {!upscalerLoaded && !isProcessing && (
              <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-100 rounded-xl">
                 <Loader2 className="w-4 h-4 text-yellow-600 animate-spin" />
-                <p className="text-[10px] font-bold text-yellow-700">Loading New Model...</p>
+                <p className="text-[10px] font-bold text-yellow-700">Loading AI weights...</p>
              </div>
           )}
 
@@ -230,7 +243,7 @@ function UpscaleTool() {
       <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-8 h-full">
         <div className="flex flex-col gap-4 h-full">
            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Original Source</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Low-Res Input</span>
               <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">{(file.size / 1024).toFixed(1)} KB</span>
            </div>
            <div className="bg-white p-2 rounded-2xl shadow-xl border border-gray-100 flex items-center justify-center flex-grow overflow-hidden min-h-[300px]">
@@ -241,7 +254,7 @@ function UpscaleTool() {
         <div className="flex flex-col gap-4 h-full">
            <div className="flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500">AI Enhanced Output</span>
-              {result && <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded">{scale}00% Upscaled</span>}
+              {result && <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded">{scale}X Scale Active</span>}
            </div>
            <div className="bg-white p-2 rounded-2xl shadow-xl border-2 border-dashed border-indigo-100 flex items-center justify-center flex-grow overflow-hidden min-h-[300px] relative">
               {result ? (
@@ -249,7 +262,7 @@ function UpscaleTool() {
               ) : (
                 <div className="flex flex-col items-center text-gray-300">
                    <Maximize className={`w-16 h-16 mb-4 ${isProcessing ? 'animate-pulse text-indigo-200' : ''}`} />
-                   <p className="text-sm font-bold uppercase tracking-widest">{isProcessing ? 'Processing AI Tiles...' : 'Result Preview'}</p>
+                   <p className="text-sm font-bold uppercase tracking-widest">{isProcessing ? 'Adding Missing Detail...' : 'AI Preview'}</p>
                 </div>
               )}
            </div>
