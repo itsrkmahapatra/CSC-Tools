@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic'
 import Dropzone from '@/components/ui/Dropzone'
 import WorkspaceLayout from '@/components/ui/WorkspaceLayout'
 import ErrorBoundary from '@/components/ui/ErrorBoundary'
-import { Wand2, Image as ImageIcon, Download, Loader2, Sliders, Ghost, RefreshCw } from 'lucide-react'
+import { Wand2, Image as ImageIcon, Download, Loader2, Sliders, Ghost, RefreshCw, AlertCircle } from 'lucide-react'
 
 function RemoveBGTool() {
   const [file, setFile] = useState<File | null>(null)
@@ -108,7 +108,7 @@ function RemoveBGTool() {
       ctx.putImageData(imageData, 0, 0)
       
       setMaskCanvas(canvas)
-      // Final rendering will be triggered by useEffect
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       console.error("High-precision processing failed:", e)
       setError("AI Analysis failed. Try a smaller or clearer image.")
