@@ -25,6 +25,7 @@ export default function RemoveBackground() {
     setIsProcessing(true)
     try {
       const blob = await removeBackground(file, {
+        publicPath: '/Docuvate/',
         progress: (status, progress) => {
           console.log(status, progress)
         }

@@ -27,14 +27,12 @@ function UpscaleTool() {
     if (!file || !preview) return
     setIsProcessing(true)
     setProgress(10)
-    
+
     try {
-      // Fetch as ArrayBuffer to bypass URL resolution issues
-      const response = await fetch('/Docuvate/models/super_resolution_quantized.onnx')
-      if (!response.ok) throw new Error(`Model fetch failed: ${response.statusText}`)
-      const modelBuffer = await response.arrayBuffer()
-      
-      const session = await ort.InferenceSession.create(modelBuffer, {
+      // Use a real lightweight model from CDN
+      const modelUrl = 'https://huggingface.co/qualcomm/Real-ESRGAN-General-x4v3/resolve/main/Real-ESRGAN-General-x4v3.onnx'
+
+      const session = await ort.InferenceSession.create(modelUrl, {
         executionProviders: ['webgpu', 'webgl', 'wasm']
       })
       setProgress(30)
@@ -43,44 +41,77 @@ function UpscaleTool() {
       img.src = preview
       await img.decode()
 
+      const upscaleFactor = 4 // Model is x4
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')
-      canvas.width = img.width * 2
-      canvas.height = img.height * 2
-      
-      const tileSize = 256
+      if (!ctx) return
+
+      canvas.width = img.width * upscaleFactor
+      canvas.height = img.height * upscaleFactor
+
+      const tileSize = 128 // Smaller tiles for memory efficiency
+      const totalTiles = Math.ceil(img.height / tileSize) * Math.ceil(img.width / tileSize)
+      let processedTiles = 0
+
       for (let y = 0; y < img.height; y += tileSize) {
         for (let x = 0; x < img.width; x += tileSize) {
+          const w = Math.min(tileSize, img.width - x)
+          const h = Math.min(tileSize, img.height - y)
+
           const tileCanvas = document.createElement('canvas')
-          tileCanvas.width = Math.min(tileSize, img.width - x)
-          tileCanvas.height = Math.min(tileSize, img.height - y)
-          tileCanvas.getContext('2d')?.drawImage(img, x, y, tileCanvas.width, tileCanvas.height, 0, 0, tileCanvas.width, tileCanvas.height)
-          
-          const imageData = tileCanvas.getContext('2d')?.getImageData(0, 0, tileCanvas.width, tileCanvas.height)
-          const float32Data = new Float32Array(3 * tileCanvas.width * tileCanvas.height)
-          
-          for (let i = 0; i < imageData!.data.length / 4; i++) {
+          tileCanvas.width = w
+          tileCanvas.height = h
+          const tCtx = tileCanvas.getContext('2d')
+          tCtx?.drawImage(img, x, y, w, h, 0, 0, w, h)
+
+          const imageData = tCtx?.getImageData(0, 0, w, h)
+          const float32Data = new Float32Array(3 * w * h)
+
+          // Preprocess: HWC to CHW and normalize to [0, 1]
+          for (let i = 0; i < w * h; i++) {
             float32Data[i] = imageData!.data[i * 4] / 255
-            float32Data[i + tileCanvas.width * tileCanvas.height] = imageData!.data[i * 4 + 1] / 255
-            float32Data[i + 2 * tileCanvas.width * tileCanvas.height] = imageData!.data[i * 4 + 2] / 255
+            float32Data[i + w * h] = imageData!.data[i * 4 + 1] / 255
+            float32Data[i + 2 * w * h] = imageData!.data[i * 4 + 2] / 255
           }
 
-          const tensor = new ort.Tensor('float32', float32Data, [1, 3, tileCanvas.height, tileCanvas.width])
-          await session.run({ 'input': tensor })
-          ctx?.drawImage(tileCanvas, x * 2, y * 2)
+          const tensor = new ort.Tensor('float32', float32Data, [1, 3, h, w])      
+          const results = await session.run({ 'input': tensor })
+          const output = results[Object.keys(results)[0]].data as Float32Array
+
+          // Postprocess: CHW to HWC
+          const outW = w * upscaleFactor
+          const outH = h * upscaleFactor
+          const outData = new Uint8ClampedArray(outW * outH * 4)
+
+          for (let i = 0; i < outW * outH; i++) {
+            outData[i * 4] = Math.max(0, Math.min(255, output[i] * 255))
+            outData[i * 4 + 1] = Math.max(0, Math.min(255, output[i + outW * outH] * 255))
+            outData[i * 4 + 2] = Math.max(0, Math.min(255, output[i + 2 * outW * outH] * 255))
+            outData[i * 4 + 3] = 255
+          }
+
+          const outImageData = new ImageData(outData, outW, outH)
+          const outCanvas = document.createElement('canvas')
+          outCanvas.width = outW
+          outCanvas.height = outH
+          outCanvas.getContext('2d')?.putImageData(outImageData, 0, 0)
+
+          ctx.drawImage(outCanvas, x * upscaleFactor, y * upscaleFactor)
+
+          processedTiles++
+          setProgress(30 + Math.floor((processedTiles / totalTiles) * 65))
         }
       }
 
-      setResult(canvas.toDataURL())
+      setResult(canvas.toDataURL('image/png'))
       setProgress(100)
     } catch (e) {
       console.error("AI Upscale failed:", e)
-      throw e
+      alert("AI Upscale failed. This model requires a lot of VRAM/RAM. Try a smaller image.")
     } finally {
       setIsProcessing(false)
     }
   }
-
   const handleDownload = () => {
     if (!result) return
     const a = document.createElement('a')

@@ -16,8 +16,8 @@ export default function PdfToPdfA() {
       const pdf = await PDFDocument.load(arrayBuffer)
       
       // Simulate PDF/A conversion logic (Flattening annotations, embedding fonts strictly)
-      pdf.setCreator('CSC Tools PDF/A Generator')
-      pdf.setProducer('CSC Tools System')
+      pdf.setCreator('Docuvate PDF/A Generator')
+      pdf.setProducer('Docuvate System')
       
       const pdfBytes = await pdf.save({ useObjectStreams: false })
       const blob = new Blob([pdfBytes as unknown as BlobPart], { type: 'application/pdf' })

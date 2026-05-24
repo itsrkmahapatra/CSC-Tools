@@ -2,7 +2,7 @@ export default function Terms() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-16">
       <h1 className="text-3xl font-bold mb-6">Terms & Conditions</h1>
-      <p className="mb-4">By accessing CSC Tools, you agree to these terms:</p>
+      <p className="mb-4">By accessing Docuvate, you agree to these terms:</p>
       <ul className="list-disc pl-6 mb-4 space-y-2">
         <li>The site and all content are proprietary and confidential.</li>
         <li>You may not reproduce, clone, sell, or modify the source code.</li>
