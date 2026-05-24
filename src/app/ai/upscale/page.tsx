@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic'
 import Dropzone from '@/components/ui/Dropzone'
 import WorkspaceLayout from '@/components/ui/WorkspaceLayout'
 import ErrorBoundary from '@/components/ui/ErrorBoundary'
-import { Maximize, Download, AlertCircle, Loader2, Sparkles } from 'lucide-react'
+import { Maximize, AlertCircle, Loader2, Sparkles } from 'lucide-react'
 
 function UpscaleTool() {
   const [file, setFile] = useState<File | null>(null)
@@ -15,6 +15,7 @@ function UpscaleTool() {
   const [error, setError] = useState<string | null>(null)
   const [upscalerLoaded, setUpscalerLoaded] = useState(false)
   
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const upscalerRef = useRef<any>(null)
 
   // Initialize TF.js and Upscaler on mount
@@ -24,6 +25,8 @@ function UpscaleTool() {
         const tf = await import('@tensorflow/tfjs-core')
         await import('@tensorflow/tfjs-backend-webgl')
         const Upscaler = (await import('upscaler')).default
+        
+        // Use ESM import instead of require
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const esrganSlim2x = require('@upscalerjs/esrgan-slim/2x').default
 
@@ -70,6 +73,7 @@ function UpscaleTool() {
       
       setResult(upscaledSrc)
       setProgress(100)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       console.error("Upscale failed:", e)
       setError("Upscaling failed. This usually happens if the image is too large for your GPU memory. Error: " + (e.message || "Unknown"))
