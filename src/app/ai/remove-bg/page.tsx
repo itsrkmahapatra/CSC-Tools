@@ -88,7 +88,8 @@ function RemoveBGTool() {
       canvas.width = img.width
       canvas.height = img.height
       const ctx = canvas.getContext('2d')
-      const imageData = ctx!.createImageData(img.width, img.height)
+      if (!ctx) return
+      const imageData = ctx.createImageData(img.width, img.height)
       
       for (let i = 0; i < segmentation.data.length; i++) {
         const val = segmentation.data[i] === 1 ? 255 : 0
@@ -97,10 +98,11 @@ function RemoveBGTool() {
         imageData.data[i * 4 + 2] = val
         imageData.data[i * 4 + 3] = 255
       }
-      ctx!.putImageData(imageData, 0, 0)
+      ctx.putImageData(imageData, 0, 0)
       
       setMaskCanvas(canvas)
       renderFinal(canvas)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       console.error("High-precision processing failed:", e)
       setError("AI failed to process image.")
@@ -125,8 +127,8 @@ function RemoveBGTool() {
     tempMask.height = canvas.height
     const tCtx = tempMask.getContext('2d')
     
-    if (edgeBlur > 0) {
-      tCtx!.filter = `blur(${edgeBlur}px)`
+    if (edgeBlur > 0 && tCtx) {
+      tCtx.filter = `blur(${edgeBlur}px)`
     }
     tCtx?.drawImage(currentMask, 0, 0)
 
@@ -135,9 +137,11 @@ function RemoveBGTool() {
     fgCanvas.height = canvas.height
     const fgCtx = fgCanvas.getContext('2d')
     
-    fgCtx?.drawImage(img, 0, 0)
-    fgCtx!.globalCompositeOperation = 'destination-in'
-    fgCtx?.drawImage(tempMask, 0, 0)
+    if (fgCtx) {
+      fgCtx.drawImage(img, 0, 0)
+      fgCtx.globalCompositeOperation = 'destination-in'
+      fgCtx.drawImage(tempMask, 0, 0)
+    }
 
     if (bgColor !== 'transparent') {
         ctx.fillStyle = bgColor
