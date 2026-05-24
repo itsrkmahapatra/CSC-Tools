@@ -174,7 +174,6 @@ function RemoveBGTool() {
     const f = e.target.files?.[0]
     if (f) {
         const url = URL.createObjectURL(f)
-        // setBgImage(url) - bgImage unused in current logic, directly using bgColor for simplified build
         console.log("BG Image uploaded:", url)
     }
   }
