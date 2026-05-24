@@ -33,8 +33,8 @@ function RemoveBGTool() {
 
         const model = bodySegmentation.SupportedModels.MediaPipeSelfieSegmentation
         const segmenterConfig = {
-          runtime: 'tfjs',
-          modelType: 'general'
+          runtime: 'tfjs' as const,
+          modelType: 'general' as const
         }
         
         segmenterRef.current = await bodySegmentation.createSegmenter(model, segmenterConfig)
