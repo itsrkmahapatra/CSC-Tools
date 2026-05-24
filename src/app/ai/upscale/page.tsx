@@ -12,6 +12,7 @@ function UpscaleTool() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [progress, setProgress] = useState(0)
   const [result, setResult] = useState<string | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [ort, setOrt] = useState<any>(null)
 
   useEffect(() => {
