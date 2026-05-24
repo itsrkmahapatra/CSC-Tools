@@ -27,7 +27,7 @@ function UpscaleTool() {
         const Upscaler = (await import('upscaler')).default
         
         // Use ESM import instead of require
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
         const esrganSlim2x = require('@upscalerjs/esrgan-slim/2x').default
 
         await tf.setBackend('webgl')
