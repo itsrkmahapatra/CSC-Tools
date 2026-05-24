@@ -19,7 +19,7 @@ function RemoveBGTool() {
   const [shadow, setShadow] = useState<number>(0)
   const [brightness] = useState<number>(0.3)
   
-  // Mask Refinement (Manual Brush)
+  // Mask Refinement
   const [maskCanvas, setMaskCanvas] = useState<HTMLCanvasElement | null>(null)
 
   const [error, setError] = useState<string | null>(null)
@@ -41,7 +41,7 @@ function RemoveBGTool() {
         await tf.setBackend('webgl')
         await tf.ready()
 
-        // Load BodyPix with ResNet50 for highest accuracy (slower but 100% precision focused)
+        // Load BodyPix with ResNet50 for highest accuracy
         segmenterRef.current = await bodyPix.load({
           architecture: 'ResNet50',
           outputStride: 32,
@@ -49,7 +49,6 @@ function RemoveBGTool() {
         })
         
         setModelLoaded(true)
-        console.log("[RemoveBG] High-Precision Engine Ready (ResNet50)")
       } catch (e) {
         console.error("AI Initialization failed:", e)
         setError("High-precision engine failed to load. Your GPU may not support ResNet50.")
@@ -92,7 +91,6 @@ function RemoveBGTool() {
       const ctx = canvas.getContext('2d')
       const imageData = ctx!.createImageData(img.width, img.height)
       
-      // BodyPix data is 0 or 1. We want a mask where person is WHITE (255) and BG is BLACK (0)
       for (let i = 0; i < segmentation.data.length; i++) {
         const val = segmentation.data[i] === 1 ? 255 : 0
         imageData.data[i * 4] = val
@@ -106,8 +104,7 @@ function RemoveBGTool() {
       renderFinal(canvas)
     } catch (e: any) {
       console.error("High-precision processing failed:", e)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setError("AI failed to process image. Error: " + (e.message || "Model Timeout"))
+      setError("AI failed to process image.")
     } finally {
       setIsProcessing(false)
     }
@@ -124,19 +121,16 @@ function RemoveBGTool() {
     canvas.height = img.height
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    // 1. Create a temp canvas for the smoothed mask
     const tempMask = document.createElement('canvas')
     tempMask.width = canvas.width
     tempMask.height = canvas.height
     const tCtx = tempMask.getContext('2d')
     
-    // Apply Edge Smoothing (Blur) to the mask
     if (edgeBlur > 0) {
       tCtx!.filter = `blur(${edgeBlur}px)`
     }
     tCtx?.drawImage(currentMask, 0, 0)
 
-    // 2. Draw Foreground (Person) clipped by mask
     const fgCanvas = document.createElement('canvas')
     fgCanvas.width = canvas.width
     fgCanvas.height = canvas.height
@@ -146,13 +140,11 @@ function RemoveBGTool() {
     fgCtx!.globalCompositeOperation = 'destination-in'
     fgCtx?.drawImage(tempMask, 0, 0)
 
-    // 3. Draw Background
     if (bgColor !== 'transparent') {
         ctx.fillStyle = bgColor
         ctx.fillRect(0, 0, canvas.width, canvas.height)
     }
 
-    // 4. Apply Shadow Effect
     if (shadow > 0) {
       ctx.shadowColor = `rgba(0,0,0,${brightness})`
       ctx.shadowBlur = shadow
@@ -164,7 +156,6 @@ function RemoveBGTool() {
     setResult(canvas.toDataURL('image/png'))
   }, [bgColor, edgeBlur, shadow, brightness])
 
-  // Re-render when effects change
   useEffect(() => {
     if (maskCanvas) renderFinal(maskCanvas)
   }, [edgeBlur, shadow, brightness, bgColor, maskCanvas, renderFinal])
