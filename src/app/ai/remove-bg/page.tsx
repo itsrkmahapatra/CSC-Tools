@@ -127,43 +127,62 @@ function RemoveBGTool() {
     }
   }
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!result) return
     
+    const downloadWithName = (url: string) => {
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `docuvate-bg-removed-${Date.now()}.png`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+    }
+
+    // Case 1: Simple transparent download
+    if (bgColor === 'transparent' && !bgImage) {
+      downloadWithName(result)
+      return
+    }
+
+    // Case 2: Composite on canvas (Solid Color or Image)
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')
-    const img = new Image()
-    img.src = result
-    img.onload = () => {
-      canvas.width = img.width
-      canvas.height = img.height
-      
-      if (bgImage) {
-        const bgImg = new Image()
-        bgImg.src = bgImage
-        bgImg.onload = () => {
-          ctx?.drawImage(bgImg, 0, 0, canvas.width, canvas.height)
-          ctx?.drawImage(img, 0, 0)
-          downloadCanvas(canvas)
-        }
-      } else if (bgColor !== 'transparent') {
-        ctx!.fillStyle = bgColor
-        ctx?.fillRect(0, 0, canvas.width, canvas.height)
-        ctx?.drawImage(img, 0, 0)
-        downloadCanvas(canvas)
-      } else {
-        downloadCanvas(canvas)
-      }
-    }
-  }
+    if (!ctx) return
 
-  const downloadCanvas = (canvas: HTMLCanvasElement | string) => {
-    const a = document.createElement('a')
-    a.href = typeof canvas === 'string' ? canvas : canvas.toDataURL('image/png')
-    a.download = `docuvate-bg-removed-${Date.now()}.png`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
+    const img = new Image()
+    img.crossOrigin = "anonymous"
+    
+    // Wrap in Promise to ensure image is loaded before drawing
+    const loadImage = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {
+      const i = new Image()
+      i.crossOrigin = "anonymous"
+      i.onload = () => resolve(i)
+      i.onerror = reject
+      i.src = src
+    })
+
+    try {
+      const foregroundImg = await loadImage(result)
+      canvas.width = foregroundImg.width
+      canvas.height = foregroundImg.height
+
+      if (bgImage) {
+        const bgImg = await loadImage(bgImage)
+        ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height)
+      } else if (bgColor !== 'transparent') {
+        ctx.fillStyle = bgColor
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+      }
+
+      // Draw the BG-removed foreground on top
+      ctx.drawImage(foregroundImg, 0, 0)
+      
+      downloadWithName(canvas.toDataURL('image/png'))
+    } catch (e) {
+      console.error("Download generation failed:", e)
+      alert("Failed to generate download. Please try again.")
+    }
   }
 
   const handleBgImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
