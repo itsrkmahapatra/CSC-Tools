@@ -1,19 +1,27 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import Dropzone from '@/components/ui/Dropzone'
 import WorkspaceLayout from '@/components/ui/WorkspaceLayout'
 import ErrorBoundary from '@/components/ui/ErrorBoundary'
-import * as ort from 'onnxruntime-web'
 
-// Configure WASM paths
-ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.0/dist/'
-
+// We will load ONNX dynamically to avoid SSR and hydration mismatches
 function UpscaleTool() {
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [progress, setProgress] = useState(0)
   const [result, setResult] = useState<string | null>(null)
+  const [ort, setOrt] = useState<any>(null)
+
+  useEffect(() => {
+    // Load onnxruntime-web only on the client side
+    import('onnxruntime-web').then((mod) => {
+      setOrt(mod)
+      // Configure WASM paths
+      mod.env.wasm.wasmPaths = '/Docuvate/ort/'
+    })
+  }, [])
 
   const handleFilesDrop = (droppedFiles: File[]) => {
     const f = droppedFiles[0]
@@ -24,16 +32,16 @@ function UpscaleTool() {
   }
 
   const handleProcess = async () => {
-    if (!file || !preview) return
+    if (!file || !preview || !ort) return
     setIsProcessing(true)
     setProgress(10)
 
     try {
-      // Use a real lightweight model from CDN
+      // Use the self-hosted model path or HuggingFace
       const modelUrl = 'https://huggingface.co/qualcomm/Real-ESRGAN-General-x4v3/resolve/main/Real-ESRGAN-General-x4v3.onnx'
 
       const session = await ort.InferenceSession.create(modelUrl, {
-        executionProviders: ['webgpu', 'webgl', 'wasm']
+        executionProviders: ['webgl', 'wasm']
       })
       setProgress(30)
 
@@ -41,15 +49,15 @@ function UpscaleTool() {
       img.src = preview
       await img.decode()
 
-      const upscaleFactor = 4 // Model is x4
+      const upscaleFactor = 4 
       const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
+      const ctx = canvas.getContext('2d', { willReadFrequently: true })
       if (!ctx) return
 
       canvas.width = img.width * upscaleFactor
       canvas.height = img.height * upscaleFactor
 
-      const tileSize = 128 // Smaller tiles for memory efficiency
+      const tileSize = 128 
       const totalTiles = Math.ceil(img.height / tileSize) * Math.ceil(img.width / tileSize)
       let processedTiles = 0
 
@@ -61,13 +69,12 @@ function UpscaleTool() {
           const tileCanvas = document.createElement('canvas')
           tileCanvas.width = w
           tileCanvas.height = h
-          const tCtx = tileCanvas.getContext('2d')
+          const tCtx = tileCanvas.getContext('2d', { willReadFrequently: true })
           tCtx?.drawImage(img, x, y, w, h, 0, 0, w, h)
 
           const imageData = tCtx?.getImageData(0, 0, w, h)
           const float32Data = new Float32Array(3 * w * h)
 
-          // Preprocess: HWC to CHW and normalize to [0, 1]
           for (let i = 0; i < w * h; i++) {
             float32Data[i] = imageData!.data[i * 4] / 255
             float32Data[i + w * h] = imageData!.data[i * 4 + 1] / 255
@@ -78,7 +85,6 @@ function UpscaleTool() {
           const results = await session.run({ 'input': tensor })
           const output = results[Object.keys(results)[0]].data as Float32Array
 
-          // Postprocess: CHW to HWC
           const outW = w * upscaleFactor
           const outH = h * upscaleFactor
           const outData = new Uint8ClampedArray(outW * outH * 4)
@@ -112,11 +118,12 @@ function UpscaleTool() {
       setIsProcessing(false)
     }
   }
+
   const handleDownload = () => {
     if (!result) return
     const a = document.createElement('a')
     a.href = result
-    a.download = `upscaled-${file?.name}`
+    a.download = `upscaled-${file?.name || 'image'}.png`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -140,7 +147,7 @@ function UpscaleTool() {
       isProcessing={isProcessing}
       sidebarContent={
         <div className="space-y-6">
-          <p className="text-xs text-gray-500">Note: Requires model file in the ./public/models/ directory.</p>
+          <p className="text-xs text-gray-500">Note: Processing happens 100% locally in your browser.</p>
           {isProcessing && (
             <div className="bg-indigo-50 p-4 rounded border border-indigo-200">
               <p className="text-xs font-bold text-indigo-800 mb-2 animate-pulse text-center">Processing AI Model...</p>
@@ -155,10 +162,10 @@ function UpscaleTool() {
       }
     >
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 h-full">
-        <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100 flex items-center justify-center">
+        <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100 flex items-center justify-center min-h-[300px]">
             {preview && <img src={preview} alt="Original" className="max-w-full max-h-full object-contain" />}
         </div>
-        <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100 flex items-center justify-center">
+        <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100 flex items-center justify-center min-h-[300px]">
             {result && <img src={result} alt="Upscaled" className="max-w-full max-h-full object-contain" />}
         </div>
       </div>
@@ -166,10 +173,14 @@ function UpscaleTool() {
   )
 }
 
-export default function PhotoUpscale() {
+const PhotoUpscale = dynamic(() => Promise.resolve(UpscaleTool), {
+  ssr: false
+})
+
+export default function Page() {
   return (
     <ErrorBoundary>
-      <UpscaleTool />
+      <PhotoUpscale />
     </ErrorBoundary>
   )
 }
