@@ -149,6 +149,18 @@ export default function MergePDF() {
                <button onClick={() => toggleSelectAll(true)} className="py-2 text-[10px] font-bold border rounded-lg hover:bg-gray-50 uppercase">Select All</button>
                <button onClick={() => toggleSelectAll(false)} className="py-2 text-[10px] font-bold border rounded-lg hover:bg-gray-50 uppercase">Deselect All</button>
              </div>
+             <button 
+               onClick={() => {
+                 const newPages = pages.filter(p => !p.selected);
+                 if (newPages.length !== pages.length) {
+                   setPages(newPages);
+                 }
+               }} 
+               disabled={!pages.some(p => p.selected)}
+               className="w-full py-2 text-[10px] font-bold bg-red-50 text-red-600 border border-red-100 rounded-lg hover:bg-red-100 uppercase transition-all disabled:opacity-30 flex items-center justify-center gap-2"
+             >
+               <Trash2 className="w-3 h-3" /> Delete Selected
+             </button>
              <div className="flex gap-2 border-t pt-3 mt-3">
                 <button 
                   onClick={() => setViewMode('grid')}
@@ -221,12 +233,12 @@ export default function MergePDF() {
                       </div>
 
                       <div className="flex-grow min-w-0">
-                        <div className="flex justify-between items-start">
-                           <div>
+                        <div className="flex justify-between items-end">
+                           <div className="min-w-0">
                              <p className="text-[10px] font-black text-red-600 uppercase tracking-tighter">Page {item.pageIndex + 1}</p>
-                             <p className="text-[9px] text-gray-400 truncate max-w-[100px] uppercase font-bold">{item.fileName}</p>
+                             <p className="text-[9px] text-gray-400 truncate w-full uppercase font-bold">{item.fileName}</p>
                            </div>
-                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                           <div className="flex items-center gap-1.5">
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -234,18 +246,20 @@ export default function MergePDF() {
                                   newPages[idx].rotation = (newPages[idx].rotation + 90) % 360;
                                   setPages(newPages);
                                 }}
-                                className="p-1 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded"
+                                className="p-1.5 bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg border border-transparent hover:border-red-100 transition-all shadow-sm"
+                                title="Rotate Page"
                               >
-                                <RotateCw className="w-3 h-3" />
+                                <RotateCw className="w-4 h-4" />
                               </button>
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setPages(pages.filter((_, i) => i !== idx));
                                 }}
-                                className="p-1 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded"
+                                className="p-1.5 bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-lg border border-transparent hover:border-red-100 transition-all shadow-sm"
+                                title="Delete Page"
                               >
-                                <Trash2 className="w-3 h-3" />
+                                <Trash2 className="w-4 h-4" />
                               </button>
                            </div>
                         </div>
