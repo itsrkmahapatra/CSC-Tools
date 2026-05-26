@@ -15,7 +15,7 @@
     "@hello-pangea/dnd": "^18.0.1",
     "@imgly/background-removal": "^1.7.0",
     "@tensorflow-models/body-pix": "^2.2.1",
-    "@tensorflow/tfjs": "^4.11.0",
+    "@tensorflow/tfjs": "^4.22.0",
     "@tensorflow/tfjs-backend-webgl": "^4.22.0",
     "@tensorflow/tfjs-core": "^4.22.0",
     "@upscalerjs/esrgan-slim": "^1.0.0",
