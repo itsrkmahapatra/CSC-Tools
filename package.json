@@ -42,7 +42,7 @@
   "devDependencies": {
     "@types/cropperjs": "^1.1.5",
     "@types/jszip": "^3.4.0",
-    "@types/node": "^20",
+    "@types/node": "^25",
     "@types/pdfjs-dist": "^2.10.378",
     "@types/react": "^18",
     "@types/react-dom": "^19",
