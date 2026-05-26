@@ -23,7 +23,7 @@
     "@upscalerjs/maxim-deblurring": "^0.1.0",
     "@upscalerjs/maxim-denoising": "^0.1.0",
     "browser-image-compression": "^2.0.2",
-    "cropperjs": "^1.6.2",
+    "cropperjs": "^2.1.1",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "jszip": "^3.10.1",
