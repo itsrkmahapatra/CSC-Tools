@@ -49,6 +49,7 @@ export default function RootLayout({
           {children}
         </main>
         <footer className="bg-white border-t py-6 text-center text-gray-500 text-sm">
+          <img src="/Docuvate/assets/developer.png" alt="Raj Kishor Mahapatra" className="w-16 h-16 rounded-full border-2 border-red-600 mx-auto mb-4 shadow-md" />
           <p className="mb-2">Engineered by Raj Kishor Mahapatra</p>
           <div className="flex justify-center gap-4">
             <Link href="/terms" className="hover:text-red-600 underline">Terms & Conditions</Link>
