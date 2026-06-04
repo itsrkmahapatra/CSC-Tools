@@ -12,20 +12,7 @@ export default function HtmlToPdf() {
   const [isProcessing, setIsProcessing] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
-  useEffect(() => {
-    updateIframeContent()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [htmlCode])
 
-  const updateIframeContent = () => {
-    const iframe = iframeRef.current
-    if (iframe && iframe.contentWindow) {
-      const doc = iframe.contentWindow.document
-      doc.open()
-      doc.write(htmlCode)
-      doc.close()
-    }
-  }
 
   const handleFetchUrl = async () => {
     if (!url) return
@@ -156,6 +143,7 @@ export default function HtmlToPdf() {
                  title="Preview" 
                  className="absolute inset-0 w-full h-full border-none"
                  sandbox="allow-scripts allow-same-origin"
+                 srcDoc={htmlCode}
                />
             </div>
           </div>
