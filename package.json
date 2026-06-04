@@ -37,7 +37,7 @@
     "react-signature-canvas": "^1.1.0-alpha.2",
     "tesseract.js": "^7.0.0",
     "upscaler": "^1.0.0",
-    "zustand": "^5.0.13"
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@types/cropperjs": "^1.1.5",
