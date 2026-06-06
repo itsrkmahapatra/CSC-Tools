@@ -1,0 +1,28 @@
+﻿=========================================
+REDDIT TITLE OPTIONS:
+1. Show r/webdev: Docuvate — An offline-first browser utility suite (OCR, Merging, Signatures) running on WebAssembly
+2. I got tired of uploading PDFs to sketchy websites, so I built an offline-first alternative using React & WASM
+3. How I built a secure, client-side PDF utility suite with Tesseract.js and Next.js
+=========================================
+
+Hey r/webdev!
+
+I built **Docuvate**, a secure, offline-first WebAssembly-powered document utility suite to merge, sign, compress, and process PDFs and images directly in the browser.
+
+### The Problem
+Almost every free PDF tool online requires you to upload your files to their servers. This is a massive security risk if you're dealing with tax forms, contracts, or identification documents.
+
+### How It Works
+Docuvate processes all files client-side. We use React, Next.js, WebAssembly, and:
+- **PDF-Lib:** For merging, splitting, and sanitizing PDF metadata.
+- **Tesseract.js:** For client-side OCR text extraction.
+- **HTML Canvas:** For drawing and applying signatures.
+- **TailwindCSS:** For a clean, cohesive, responsive interface.
+
+Your sensitive documents never leave your local machine.
+
+I'd love your feedback on the project's performance and what other offline utilities you'd like to see added to the suite!
+
+Check out the code here: https://github.com/itsrkmahapatra/Docuvate
+
+Thanks!

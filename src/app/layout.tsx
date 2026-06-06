@@ -58,7 +58,11 @@ export default function RootLayout({
           </div>
         </footer>
         <script src="/Docuvate/js/upi-widget.js?v=1.4" defer></script>
-      </body>
+      <div style={{position: 'fixed', bottom: '20px', right: '20px', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '10px'}}>
+  <a href="https://github.com/itsrkmahapatra/Docuvate/releases/download/v1.0.0/Docuvate.exe" style={{padding: '12px 20px', background: '#0078D7', color: 'white', textDecoration: 'none', borderRadius: '8px', fontFamily: 'sans-serif', fontWeight: 'bold', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', textAlign: 'center'}}>🖥️ Download for Windows</a>
+  <a href="https://github.com/itsrkmahapatra/Docuvate/releases/download/v1.0.0/Docuvate.apk" style={{padding: '12px 20px', background: '#3DDC84', color: 'white', textDecoration: 'none', borderRadius: '8px', fontFamily: 'sans-serif', fontWeight: 'bold', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', textAlign: 'center'}}>📱 Download for Android</a>
+</div>
+</body>
     </html>
   )
 }
