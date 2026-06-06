@@ -1,4 +1,4 @@
-﻿# ✍️ Docuvate
+# ✍️ Docuvate
 
 A secure, offline-first WebAssembly-powered document utility suite to merge, sign, compress, and process PDFs and images directly in your browser.
 
@@ -64,5 +64,5 @@ Contributions are extremely welcome! Please check out [CONTRIBUTING.md](.github/
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 ## 📥 Download Application
-- [🖥️ Windows Download (.exe)](https://github.com/itsrkmahapatra/Docuvate/releases/download/v1.0.0/Docuvate.exe)
-- [📱 Android Download (.apk)](https://github.com/itsrkmahapatra/Docuvate/releases/download/v1.0.0/Docuvate.apk)
+- [🖥️ Windows Download (.exe)](https://github.com/itsrkmahapatra/Docuvate/releases/latest
+- [📱 Android Download (.apk)](https://github.com/itsrkmahapatra/Docuvate/releases/latest
