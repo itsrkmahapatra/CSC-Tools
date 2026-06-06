@@ -37,7 +37,7 @@ jobs:
           npx cap init "Docuvate" "com.itsrkmahapatra.docuvate" --web-dir www
           mkdir www
           echo "<html><body>Loading...</body></html>" > www/index.html
-          echo '{ "appId": "com.itsrkmahapatra.docuvate", "appName": "Docuvate", "webDir": "www", "server": { "url": "https://itsrkmahapatra.github.io/Docuvate", "cleartext": true } }' > capacitor.config.json
+          echo '{ "appId": "com.itsrkmahapatra.docuvate", "appName": "Docuvate", "webDir": "www", "server": { "url": "https://itsrkmahapatra.github.io/Docuvate?v=1780753094", "cleartext": true } }' > capacitor.config.json
           npx cap add android
 
       - name: Add App Icon
