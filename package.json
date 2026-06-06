@@ -1,7 +1,9 @@
 {
-  "name": "Docuvate",
+  "name": "@itsrkmahapatra/docuvate",
   "version": "1.2.0",
-  "private": true,
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
   "homepage": "https://itsrkmahapatra.github.io/Docuvate",
   "scripts": {
     "dev": "next dev",
