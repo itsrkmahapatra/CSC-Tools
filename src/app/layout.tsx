@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   description: 'A comprehensive suite of 100% client-side, privacy-focused tools for PDF and Image processing. Merge, split, compress, convert, and edit files locally in your browser.',
   keywords: 'PDF tools, image tools, private PDF editor, local file processing, merge PDF, compress image, OCR PDF, secure PDF utilities',
   authors: [{ name: 'Raj Kishor Mahapatra' }],
+  verification: {
+    google: 'o9Y7VOAd6zRwNAAd3X8D4bSyJIi5eG2aJeClgAWYReg',
+  },
 }
 
 export default function RootLayout({
@@ -18,7 +21,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <meta name="google-site-verification" content="o9Y7VOAd6zRwNAAd3X8D4bSyJIi5eG2aJeClgAWYReg" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
