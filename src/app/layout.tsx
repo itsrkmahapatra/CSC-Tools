@@ -61,9 +61,7 @@ export default function RootLayout({
         </footer>
         <script src="/Docuvate/js/upi-widget.js?v=1.4" defer></script>
       
-<a id="app-download-btn" href="https://github.com/itsrkmahapatra/Docuvate/releases/latest" style={{position: 'fixed', bottom: '20px', left: '20px', zIndex: 10000, padding: '12px 24px', background: 'linear-gradient(135deg, #0078D7, #3DDC84)', color: 'white', textDecoration: 'none', borderRadius: '30px', fontFamily: 'sans-serif', fontWeight: 'bold', boxShadow: '0 4px 15px rgba(0,0,0,0.2)', textAlign: 'center', fontSize: '16px', whiteSpace: 'nowrap'}}>📥 Download Apps (Win/Android)</a>
-<script dangerouslySetInnerHTML={{ __html: "if (navigator.userAgent.includes('Electron') || navigator.userAgent.includes('Capacitor') || window.Capacitor) { var btn = document.getElementById('app-download-btn'); if (btn) btn.style.display = 'none'; }" }} />
-</body>
+      </body>
     </html>
   )
 }
