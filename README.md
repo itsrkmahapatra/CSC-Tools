@@ -63,6 +63,4 @@ Contributions are extremely welcome! Please check out [CONTRIBUTING.md](.github/
 ## 📜 License
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
-## 📥 Download Application
-- [🖥️ Windows Download (.exe)](https://github.com/itsrkmahapatra/Docuvate/releases/latest
-- [📱 Android Download (.apk)](https://github.com/itsrkmahapatra/Docuvate/releases/latest
+
