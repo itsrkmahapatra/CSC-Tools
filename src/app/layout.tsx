@@ -19,7 +19,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -38,7 +38,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="flex flex-col min-h-screen">
+      <body className="flex flex-col min-h-screen" suppressHydrationWarning>
         <header className="bg-yellow-100 text-yellow-800 text-sm font-medium py-2 px-4 flex items-center justify-center sticky top-0 z-50 shadow-sm">
           <Lock className="w-4 h-4 mr-2" />
           <span>100% Local Sandboxed Processing. Your files never leave your computer.</span>
