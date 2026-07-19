@@ -30,6 +30,13 @@ jobs:
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
             while IFS= read -r line; do
               echo "::error::$line"
-            done < <(tail -n 50 build.log)
+            done < <(grep -Ei "error|fail|exception|module not found|type|cannot find|\.tsx?:" build.log | head -n 10)
             exit 1
           fi
+
+      - name: Upload Build Log on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-build-log
+          path: build.log
