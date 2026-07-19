@@ -9,6 +9,28 @@ type PageSize = 'A4' | 'Letter' | 'Legal' | 'Original'
 type Orientation = 'Portrait' | 'Landscape'
 type ImageScaling = 'Fit' | 'Fill' | 'Stretch'
 
+async function convertToPngBytes(file: File): Promise<{ bytes: ArrayBuffer; width: number; height: number }> {
+  const img = new Image()
+  const url = URL.createObjectURL(file)
+  img.src = url
+  await new Promise((resolve, reject) => {
+    img.onload = resolve
+    img.onerror = reject
+  })
+  const canvas = document.createElement('canvas')
+  canvas.width = img.naturalWidth || img.width
+  canvas.height = img.naturalHeight || img.height
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error("Could not create canvas context")
+  ctx.drawImage(img, 0, 0)
+  URL.revokeObjectURL(url)
+  const blob = await new Promise<Blob>((resolve) => {
+    canvas.toBlob((b) => resolve(b || new Blob()), 'image/png')
+  })
+  const bytes = await blob.arrayBuffer()
+  return { bytes, width: canvas.width, height: canvas.height }
+}
+
 export default function JPGtoPDF() {
   const [files, setFiles] = useState<File[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
@@ -55,14 +77,29 @@ export default function JPGtoPDF() {
       const pdf = await PDFDocument.create()
       
       for (const file of files) {
-        const bytes = await file.arrayBuffer()
+        let bytes = await file.arrayBuffer()
         let image;
-        if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
-          image = await pdf.embedJpg(bytes)
-        } else if (file.type === 'image/png') {
-          image = await pdf.embedPng(bytes)
-        } else {
-          continue;
+        const isJpg = file.type === 'image/jpeg' || file.type === 'image/jpg' || file.name.endsWith('.jpg') || file.name.endsWith('.jpeg')
+        const isPng = file.type === 'image/png' || file.name.endsWith('.png')
+
+        try {
+          if (isJpg) {
+            image = await pdf.embedJpg(bytes)
+          } else if (isPng) {
+            image = await pdf.embedPng(bytes)
+          } else {
+            const converted = await convertToPngBytes(file)
+            image = await pdf.embedPng(converted.bytes)
+          }
+        } catch (err) {
+          console.warn(`Failed direct PDF embed for ${file.name}, trying canvas PNG fallback...`, err)
+          try {
+            const converted = await convertToPngBytes(file)
+            image = await pdf.embedPng(converted.bytes)
+          } catch (fallbackErr) {
+            console.error(`Fallback failed for ${file.name}:`, fallbackErr)
+            continue
+          }
         }
 
         const [width, height] = pageSize === 'Original' ? [image.width, image.height] : getPageDimensions(pageSize, orientation)

@@ -8,45 +8,75 @@ export default function ConvertToJPG() {
   const [isProcessing, setIsProcessing] = useState(false)
 
   const handleProcess = async () => {
+    if (files.length === 0) return
     setIsProcessing(true)
-    for (const file of files) {
-      try {
-        const img = new Image()
-        const url = URL.createObjectURL(file)
-        img.src = url
-        await new Promise((resolve, reject) => {
-          img.onload = resolve
-          img.onerror = reject
-        })
+    try {
+      const JSZip = (await import('jszip')).default
+      const zip = new JSZip()
+      const isMultiple = files.length > 1
 
-        const canvas = document.createElement('canvas')
-        canvas.width = img.width
-        canvas.height = img.height
-        const ctx = canvas.getContext('2d')
-        if (!ctx) continue
-        
-        // Fill white background for transparent images
-        ctx.fillStyle = "#FFFFFF"
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-        ctx.drawImage(img, 0, 0)
-        
-        canvas.toBlob((blob) => {
-          if (!blob) return
-          const outUrl = URL.createObjectURL(blob)
-          const a = document.createElement('a')
-          a.href = outUrl
+      for (const file of files) {
+        try {
+          const img = new Image()
+          const url = URL.createObjectURL(file)
+          img.src = url
+          await new Promise((resolve, reject) => {
+            img.onload = resolve
+            img.onerror = reject
+          })
+
+          const canvas = document.createElement('canvas')
+          canvas.width = img.width
+          canvas.height = img.height
+          const ctx = canvas.getContext('2d')
+          if (!ctx) continue
+          
+          // Fill white background for transparent images
+          ctx.fillStyle = "#FFFFFF"
+          ctx.fillRect(0, 0, canvas.width, canvas.height)
+          ctx.drawImage(img, 0, 0)
+          
           const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name
-          a.download = `${baseName}.jpg`
-          document.body.appendChild(a)
-          a.click()
-          document.body.removeChild(a)
-        }, 'image/jpeg', 0.9)
+          
+          const blob = await new Promise<Blob>((resolve) => {
+            canvas.toBlob((b) => resolve(b || new Blob()), 'image/jpeg', 0.9)
+          })
 
-      } catch (error) {
-        console.error("Error converting", error)
+          if (isMultiple) {
+            zip.file(`${baseName}.jpg`, blob)
+          } else {
+            const outUrl = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = outUrl
+            a.download = `${baseName}.jpg`
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(outUrl)
+          }
+          URL.revokeObjectURL(url)
+        } catch (error) {
+          console.error("Error converting file:", file.name, error)
+        }
       }
+
+      if (isMultiple) {
+        const zipBlob = await zip.generateAsync({ type: 'blob' })
+        const outUrl = URL.createObjectURL(zipBlob)
+        const a = document.createElement('a')
+        a.href = outUrl
+        a.download = `Docuvate-Conversions.zip`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(outUrl)
+      }
+    } catch (e) {
+      console.error("Failed to run conversion package", e)
+      alert("Error packaging batch images.")
+    } finally {
+      setIsProcessing(false)
     }
-    setIsProcessing(false)
   }
 
   if (files.length === 0) {

@@ -4,6 +4,8 @@ import Dropzone from '@/components/ui/Dropzone'
 import WorkspaceLayout from '@/components/ui/WorkspaceLayout'
 import { getPdfPageImages } from '@/lib/pdf-utils'
 
+import JSZip from 'jszip'
+
 export default function PDFtoJPG() {
   const [file, setFile] = useState<File | null>(null)
   const [images, setImages] = useState<string[]>([])
@@ -16,17 +18,42 @@ export default function PDFtoJPG() {
   }, [file])
 
   const handleProcess = async () => {
+    if (images.length === 0) return
     setIsProcessing(true)
-    // Download each image individually
-    images.forEach((imgUrl, idx) => {
-      const a = document.createElement('a')
-      a.href = imgUrl
-      a.download = `page-${idx + 1}-${file?.name}.jpg`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-    })
-    setIsProcessing(false)
+    try {
+      if (images.length === 1) {
+        const a = document.createElement('a')
+        a.href = images[0]
+        a.download = `page-1-${file?.name.replace('.pdf', '')}.jpg`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+      } else {
+        const zip = new JSZip()
+        for (let i = 0; i < images.length; i++) {
+          const imgUrl = images[i]
+          const response = await fetch(imgUrl)
+          const blob = await response.blob()
+          const baseName = file?.name.replace('.pdf', '') || 'document'
+          zip.file(`${baseName}-page-${i + 1}.jpg`, blob)
+        }
+        const zipBlob = await zip.generateAsync({ type: 'blob' })
+        const outUrl = URL.createObjectURL(zipBlob)
+        const a = document.createElement('a')
+        a.href = outUrl
+        const baseName = file?.name.replace('.pdf', '') || 'document'
+        a.download = `${baseName}-images.zip`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(outUrl)
+      }
+    } catch (e) {
+      console.error("Failed to generate ZIP", e)
+      alert("Error generating ZIP package. Downscaling individual images instead.")
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   if (!file) {

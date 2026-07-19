@@ -10,13 +10,16 @@ export default function CompressPDF() {
   const [progressMsg, setProgressMsg] = useState('')
   const [progressPct, setProgressPct] = useState(0)
   const workerRef = useRef<Worker | null>(null)
+  const [preset, setPreset] = useState<'extreme' | 'recommended' | 'low' | 'custom'>('recommended')
 
   useEffect(() => {
     if (file) {
-      // Suggest 50% compression as default target
-      setTargetKB(Math.round((file.size / 1024) * 0.5))
+      const originalKB = file.size / 1024
+      if (preset === 'extreme') setTargetKB(Math.round(originalKB * 0.3))
+      if (preset === 'recommended') setTargetKB(Math.round(originalKB * 0.55))
+      if (preset === 'low') setTargetKB(Math.round(originalKB * 0.8))
     }
-  }, [file])
+  }, [file, preset])
 
   useEffect(() => {
     // Note: Due to basePath, the worker is loaded from /Docuvate/
@@ -92,20 +95,52 @@ export default function CompressPDF() {
       isProcessing={isProcessing}
       sidebarContent={
         <div className="space-y-6">
-          <div>
-            <h3 className="font-semibold text-gray-700 mb-2">Target Size (KB)</h3>
-            <div className="flex space-x-2 items-center">
-              <input 
-                type="number" 
-                min="10" 
-                value={targetKB} 
-                onChange={(e) => setTargetKB(parseInt(e.target.value) || 0)} 
-                className="w-full border rounded p-2 text-center" 
-                disabled={isProcessing}
-              />
-              <span className="text-gray-500 text-sm font-bold">KB</span>
+          <div className="bg-white p-4 rounded-xl border shadow-sm space-y-4">
+            <h3 className="font-bold text-gray-800 text-xs uppercase tracking-widest">Compression Preset</h3>
+            <div className="grid grid-cols-2 gap-2">
+              <button 
+                onClick={() => setPreset('extreme')}
+                className={`py-2 px-1 text-[10px] font-bold rounded-lg border text-center transition-all ${preset === 'extreme' ? 'bg-red-50 border-red-500 text-red-700' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+              >
+                Extreme (30%)
+              </button>
+              <button 
+                onClick={() => setPreset('recommended')}
+                className={`py-2 px-1 text-[10px] font-bold rounded-lg border text-center transition-all ${preset === 'recommended' ? 'bg-red-50 border-red-500 text-red-700' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+              >
+                Recommended (55%)
+              </button>
+              <button 
+                onClick={() => setPreset('low')}
+                className={`py-2 px-1 text-[10px] font-bold rounded-lg border text-center transition-all ${preset === 'low' ? 'bg-red-50 border-red-500 text-red-700' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+              >
+                Low (80%)
+              </button>
+              <button 
+                onClick={() => setPreset('custom')}
+                className={`py-2 px-1 text-[10px] font-bold rounded-lg border text-center transition-all ${preset === 'custom' ? 'bg-red-50 border-red-500 text-red-700' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+              >
+                Custom KB
+              </button>
             </div>
-            <p className="text-xs text-gray-500 mt-2">Original Size: {(file.size / 1024).toFixed(0)} KB. Enter your desired file size footprint.</p>
+
+            {preset === 'custom' && (
+              <div className="space-y-2 pt-2 border-t border-dashed">
+                <label className="text-[9px] font-black text-gray-400 uppercase">Target Size (KB)</label>
+                <div className="flex space-x-2 items-center">
+                  <input 
+                    type="number" 
+                    min="10" 
+                    value={targetKB} 
+                    onChange={(e) => setTargetKB(parseInt(e.target.value) || 0)} 
+                    className="w-full border rounded p-2 text-center text-sm font-bold bg-gray-50" 
+                    disabled={isProcessing}
+                  />
+                  <span className="text-gray-500 text-sm font-bold">KB</span>
+                </div>
+              </div>
+            )}
+            <p className="text-[10px] text-gray-400 mt-2">Original Size: {(file.size / 1024).toFixed(0)} KB. Selected Target: {targetKB} KB.</p>
           </div>
           
           {isProcessing && (
