@@ -1,4 +1,11 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
+
+export const metadata: Metadata = {
+  title: 'Disclaimer - Docuvate Private PDF Tools',
+  description: 'Disclaimer of warranty and liability for using Docuvate - the 100% private offline PDF and Image utility suite.',
+  keywords: 'docuvate disclaimer, liability disclaimer, private document tools warranty'
+}
 
 export default function Disclaimer() {
   return (

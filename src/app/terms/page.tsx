@@ -1,3 +1,11 @@
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Terms & Conditions - Docuvate Private PDF Tools',
+  description: 'Terms & Conditions for using Docuvate - the 100% private offline PDF and Image utility suite.',
+  keywords: 'docuvate terms, terms of service, private document tools conditions'
+}
+
 export default function Terms() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-16">

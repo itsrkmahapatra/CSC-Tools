@@ -1,83 +1,35 @@
-'use client'
-import { useState, useRef, useEffect } from 'react'
-import Dropzone from '@/components/ui/Dropzone'
-import WorkspaceLayout from '@/components/ui/WorkspaceLayout'
+﻿import type { Metadata } from 'next'
+import PageClient from './page-client'
 
-export default function MemeGenerator() {
-  const [file, setFile] = useState<File | null>(null)
-  const [topText, setTopText] = useState('TOP TEXT')
-  const [bottomText, setBottomText] = useState('BOTTOM TEXT')
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+export const metadata: Metadata = {
+  title: 'Meme Generator Free - 100% Private Alternative to iLoveIMG',
+  description: 'Create custom memes locally in your browser. Docuvate operates 100% client-side. Your images never leave your computer. Free offline alternative to iLoveIMG and Meme Generator.',
+  keywords: 'meme generator online, make a meme, free meme maker, alternative to iloveimg, private meme generator, offline meme creator',
+}
 
-  useEffect(() => {
-    if (file && canvasRef.current) {
-      const img = new Image()
-      img.src = URL.createObjectURL(file)
-      img.onload = () => {
-        const ctx = canvasRef.current?.getContext('2d')
-        if (!ctx || !canvasRef.current) return
-        canvasRef.current.width = img.width
-        canvasRef.current.height = img.height
-        
-        ctx.drawImage(img, 0, 0)
-        
-        const fontSize = Math.floor(img.height / 10)
-        ctx.font = `bold ${fontSize}px Impact, sans-serif`
-        ctx.textAlign = 'center'
-        ctx.fillStyle = 'white'
-        ctx.strokeStyle = 'black'
-        ctx.lineWidth = fontSize / 15
-
-        // Top Text
-        ctx.strokeText(topText.toUpperCase(), img.width / 2, fontSize + 10)
-        ctx.fillText(topText.toUpperCase(), img.width / 2, fontSize + 10)
-
-        // Bottom Text
-        ctx.strokeText(bottomText.toUpperCase(), img.width / 2, img.height - 20)
-        ctx.fillText(bottomText.toUpperCase(), img.width / 2, img.height - 20)
-      }
-    }
-  }, [file, topText, bottomText])
-
-  const handleProcess = () => {
-    if (!canvasRef.current || !file) return
-    canvasRef.current.toBlob((blob) => {
-      if (!blob) return
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `meme.jpg`
-      a.click()
-    }, 'image/jpeg')
-  }
-
-  if (!file) {
-    return (
-      <div className="py-24">
-        <h1 className="text-4xl font-bold text-center text-gray-800 mb-4">Meme Generator</h1>
-        <p className="text-center text-gray-500 mb-8">Apply standard stylized bounding text over templates.</p>
-        <Dropzone onFilesDrop={(files) => setFile(files[0])} accept="image/*" multiple={false} theme="blue" label="Select Template" />
-      </div>
-    )
-  }
-
+export default function Page() {
   return (
-    <WorkspaceLayout onProcess={handleProcess} processLabel="Download Meme" colorTheme="blue" sidebarContent={
-      <div className="space-y-4">
-        <div>
-          <label className="text-sm font-bold text-gray-700">Top Text</label>
-          <input type="text" value={topText} onChange={e => setTopText(e.target.value)} className="w-full border rounded p-2" />
-        </div>
-        <div>
-          <label className="text-sm font-bold text-gray-700">Bottom Text</label>
-          <input type="text" value={bottomText} onChange={e => setBottomText(e.target.value)} className="w-full border rounded p-2" />
-        </div>
-        <button onClick={() => setFile(null)} className="text-sm text-red-500 hover:underline mt-4 block">Cancel</button>
-      </div>
-    }>
-      <div className="bg-white p-4 shadow border rounded overflow-hidden max-w-2xl max-h-full">
-        <canvas ref={canvasRef} className="max-w-full max-h-[60vh] object-contain" />
-      </div>
-    </WorkspaceLayout>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "Docuvate MEME GENERATOR",
+            "operatingSystem": "All",
+            "applicationCategory": "ImageEditor",
+            "browserRequirements": "Requires JavaScript and modern browser context. Runs 100% client-side offline.",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            },
+            "description": "Create custom memes locally in your browser. Docuvate operates 100% client-side. Your images never leave your computer. Free offline alternative to iLoveIMG and Meme Generator."
+          })
+        }}
+      />
+      <PageClient />
+    </>
   )
 }

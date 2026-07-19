@@ -25,8 +25,40 @@ export default function WorkspaceLayout({ children, sidebarContent, onProcess, p
   return (
     <div className="flex flex-col md:flex-row min-h-[calc(100vh-120px)] w-full bg-gray-200 overflow-hidden">
       {/* Canvas Area */}
-      <div className="flex-grow p-8 overflow-y-auto bg-gray-200 flex flex-wrap content-start justify-center gap-6 relative">
-        {children}
+      <div className="flex-grow p-8 overflow-y-auto bg-gray-200 flex flex-col justify-between items-center relative">
+        <div className="w-full flex flex-wrap content-start justify-center gap-6 mb-8">
+          {children}
+        </div>
+        
+        {/* SEO Brand-Intercepting Privacy & Comparison Copy */}
+        <div className="w-full max-w-5xl bg-white/70 backdrop-blur-sm rounded-3xl border border-gray-200/80 p-8 text-left shadow-xs mt-12 mb-4">
+          <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+            <span className="text-base">🔒</span> 100% Private Offline Alternative to iLovePDF, iLoveIMG & Pi7
+          </h3>
+          <p className="text-xs text-gray-600 leading-relaxed mb-4">
+            Docuvate is engineered as a secure, zero-server document workspace. Unlike cloud services like <strong>iLovePDF</strong>, <strong>iLoveIMG</strong>, <strong>ImgUpscaler</strong>, and <strong>Pi7 PDF</strong> which upload your sensitive files to external remote servers, Docuvate operates entirely inside your web browser. All processing, calculations, and conversions happen locally on your own machine.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs border-t border-gray-200/60 pt-4">
+            <div>
+              <h4 className="font-bold text-gray-700 mb-2">Why Local Browser Processing is Superior:</h4>
+              <ul className="list-disc pl-4 space-y-1.5 text-gray-600">
+                <li><strong>No File Size Restrictions:</strong> Process large files restricted by conventional cloud tools.</li>
+                <li><strong>Guaranteed Data Privacy:</strong> Perfect for confidential, financial, medical, and legal documents.</li>
+                <li><strong>Full Offline Capability:</strong> Once loaded, works completely offline without an active internet connection.</li>
+                <li><strong>Zero Telemetry:</strong> No tracking cookies, no logins, and zero advertising banners.</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold text-gray-700 mb-2">High-Fidelity Offline Outputs:</h4>
+              <p className="text-gray-600 leading-relaxed mb-3">
+                Docuvate utilizes local WebAssembly (WASM), WebGL context rendering, and offline neural networks (ONNX) to produce identical high-quality outputs matching cloud-based alternatives like <strong>ilovepdf.com</strong>, <strong>iloveimg.com</strong>, <strong>imgupscaler.ai</strong>, and <strong>pi7.org</strong>.
+              </p>
+              <p className="text-gray-500 font-semibold text-[10px] tracking-wide uppercase">
+                ⚡ Client-Side WebAssembly Processing (Zero Cloud Retention)
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Sidebar Configurations */}
