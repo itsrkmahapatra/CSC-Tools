@@ -59,7 +59,7 @@ export default function RootLayout({
             <Link href="/disclaimer" className="hover:text-red-600 underline">Disclaimer</Link>
           </div>
         </footer>
-        <script src="/Docuvate/js/upi-widget.js?v=1.4" defer></script>
+        <script src="/Docuvate/js/upi-widget.js?v=1.5" defer></script>
       
       </body>
     </html>
