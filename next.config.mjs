@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
-import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const nextConfig = {
   output: 'export',
@@ -15,7 +19,7 @@ const nextConfig = {
     },
   },
   webpack: (config, { isServer }) => {
-    config.resolve.alias['@'] = path.resolve(process.cwd(), 'src');
+    config.resolve.alias['@'] = resolve(__dirname, 'src');
     if (isServer) {
       config.externals.push('onnxruntime-node');
     }
