@@ -9,6 +9,11 @@ const nextConfig = {
     unoptimized: true,
   },
   transpilePackages: ['upscaler', '@tensorflow/tfjs', '@imgly/background-removal'],
+  turbopack: {
+    resolveAlias: {
+      '@': './src',
+    },
+  },
   webpack: (config, { isServer }) => {
     config.resolve.alias['@'] = path.resolve(process.cwd(), 'src');
     if (isServer) {

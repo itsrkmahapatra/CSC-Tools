@@ -7,7 +7,7 @@
   "homepage": "https://itsrkmahapatra.github.io/Docuvate",
   "scripts": {
     "dev": "next dev",
-    "build": "NEXT_DISABLE_TURBOPACK=1 next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "predeploy": "npm run build",
