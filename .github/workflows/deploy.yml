@@ -39,18 +39,18 @@ jobs:
 
       - name: Build Application
         run: |
-          npm run build 2>&1 | tee build.log
-          BUILD_EXIT=${PIPESTATUS[0]}
-          echo "### Build Log (last 150 lines)" >> $GITHUB_STEP_SUMMARY
+          set +e
+          npm run build > build.log 2>&1
+          BUILD_EXIT=$?
+          set -e
+          echo "=== FULL BUILD LOG ==="
+          cat build.log
+          echo "=== END BUILD LOG (exit $BUILD_EXIT) ==="
+          echo "### Build Log" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          tail -n 150 build.log >> $GITHUB_STEP_SUMMARY
+          cat build.log >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          if [ $BUILD_EXIT -ne 0 ]; then
-            while IFS= read -r line; do
-              echo "::error::$line"
-            done < <(grep -Ei "error TS|error:|Syntax error|Cannot find|Module not found|Failed to compile|ReferenceError|TypeError|SyntaxError" build.log | head -n 15)
-            exit 1
-          fi
+          exit $BUILD_EXIT
 
       - name: Upload Build Log
         if: always()
