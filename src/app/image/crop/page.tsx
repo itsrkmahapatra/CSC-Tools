@@ -5,6 +5,42 @@ export const metadata: Metadata = {
   title: 'Crop Image Free - 100% Private Alternative to iLoveIMG & Pi7',
   description: 'Crop your images to exact pixel values and ratios locally. Docuvate operates 100% client-side. Your images never leave your computer. Free alternative to iLoveIMG and Pi7 Image.',
   keywords: 'crop image online, image cropper free, alternative to iloveimg, alternative to pi7 image, private image cropper, offline crop',
+  alternatives: {
+    canonical: 'https://itsrkmahapatra.github.io/Docuvate/image/crop/',
+  },
+  openGraph: {
+    title: 'Crop Image Free - 100% Private Alternative to iLoveIMG & Pi7',
+    description: 'Crop your images to exact pixel values and ratios locally. Docuvate operates 100% client-side. Your images never leave your computer. Free alternative to iLoveIMG and Pi7 Image.',
+    url: 'https://itsrkmahapatra.github.io/Docuvate/image/crop/',
+    siteName: 'Docuvate',
+    images: [
+      {
+        url: 'https://itsrkmahapatra.github.io/Docuvate/assets/developer.png',
+        width: 800,
+        height: 600,
+        alt: 'Crop Image Free - 100% Private Alternative to iLoveIMG & Pi7',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Crop Image Free - 100% Private Alternative to iLoveIMG & Pi7',
+    description: 'Crop your images to exact pixel values and ratios locally. Docuvate operates 100% client-side. Your images never leave your computer. Free alternative to iLoveIMG and Pi7 Image.',
+    creator: '@itsrkmahapatra',
+    images: ['https://itsrkmahapatra.github.io/Docuvate/assets/developer.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 }
 
 export default function Page() {
@@ -17,13 +53,18 @@ export default function Page() {
             "@context": "https://schema.org",
             "@type": "SoftwareApplication",
             "name": "Docuvate CROP",
-            "operatingSystem": "All",
+            "operatingSystem": "All (Windows, macOS, Linux, iOS, Android)",
             "applicationCategory": "ImageEditor",
             "browserRequirements": "Requires JavaScript and modern browser context. Runs 100% client-side offline.",
             "offers": {
               "@type": "Offer",
               "price": "0",
               "priceCurrency": "USD"
+            },
+            "author": {
+              "@type": "Person",
+              "name": "Raj Kishor Mahapatra",
+              "url": "https://itsrkmahapatra.qzz.io/"
             },
             "description": "Crop your images to exact pixel values and ratios locally. Docuvate operates 100% client-side. Your images never leave your computer. Free alternative to iLoveIMG and Pi7 Image."
           })
