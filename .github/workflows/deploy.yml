@@ -11,6 +11,9 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      NEXT_DISABLE_TURBOPACK: 1
+      NEXT_TELEMETRY_DISABLED: 1
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4

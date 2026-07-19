@@ -5,7 +5,6 @@ const nextConfig = {
   output: 'export',
   basePath: '/Docuvate',
   trailingSlash: true,
-  bundler: 'webpack',
   images: {
     unoptimized: true,
   },
