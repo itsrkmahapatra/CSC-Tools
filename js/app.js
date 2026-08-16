@@ -167,176 +167,106 @@ const PdfTools = {
   async compressPdfDirect(file, targetKB, strictCeiling = true, onProgress = () => {}) {
     const originalBytes = file.size;
     const targetBytes = Math.max(5 * 1024, Math.round(targetKB * 1024));
-    onProgress(5, "Analyzing document structure and pages...");
+    onProgress(5, "Analyzing PDF page structures...");
 
     const fileBuffer = await file.arrayBuffer();
-
-    // -------------------------------------------------------------
-    // Pass 1: Lossless Vector & Stream Optimization
-    // -------------------------------------------------------------
-    try {
-      const vectorPdf = await PDFLib.PDFDocument.load(fileBuffer, { ignoreEncryption: true });
-      vectorPdf.setTitle('');
-      vectorPdf.setAuthor('');
-      vectorPdf.setSubject('');
-      vectorPdf.setKeywords([]);
-      vectorPdf.setProducer('Docuvate');
-      vectorPdf.setCreator('Docuvate');
-
-      const losslessBytes = await vectorPdf.save({ useObjectStreams: true, addDefaultPage: false });
-      
-      // If lossless vector optimization meets target KB, return immediately (100% crystal clear)
-      if (losslessBytes.byteLength <= targetBytes) {
-        const finalBlob = new Blob([losslessBytes], { type: 'application/pdf' });
-        const finalSizeKB = Math.round(finalBlob.size / 1024);
-        const originalSizeKB = Math.round(originalBytes / 1024);
-        const reductionPercent = Math.max(0, Math.round(((originalBytes - losslessBytes.byteLength) / originalBytes) * 100));
-
-        onProgress(100, `Lossless Complete! Output: ${finalSizeKB} KB (100% Vector Quality)`);
-        return {
-          blob: finalBlob,
-          blobUrl: URL.createObjectURL(finalBlob),
-          fileName: `resized-${targetKB}kb-${file.name}`,
-          finalSizeKB,
-          originalSizeKB,
-          targetKB,
-          reductionPercent,
-          numPages: vectorPdf.getPageCount()
-        };
-      }
-    } catch (losslessErr) {
-      console.warn("Vector pass skipped:", losslessErr);
-    }
-
-    // -------------------------------------------------------------
-    // Pass 2: High-Precision Budget-Driven Multi-Pass Binary Search
-    // -------------------------------------------------------------
-    onProgress(15, "Calibrating target size & page budgets...");
     const pdf = await pdfjsLib.getDocument({ data: fileBuffer }).promise;
     const numPages = pdf.numPages;
 
     if (numPages === 0) throw new Error("The selected PDF contains no pages.");
 
-    const renderPdfWithParams = async (scale, quality) => {
-      const newPdf = await PDFLib.PDFDocument.create();
-      const clampedScale = Math.max(0.2, Math.min(2.5, scale));
-      const clampedQuality = Math.max(0.05, Math.min(0.95, quality));
+    // Reserve budget for PDF structures (XREF table, page catalog, trailer)
+    const pdfOverheadBytes = Math.round(2048 + (numPages * 512));
+    const availableImageBytes = Math.max(1024 * numPages, targetBytes - pdfOverheadBytes);
+    const targetBytesPerPage = Math.floor(availableImageBytes / numPages);
 
-      for (let i = 1; i <= numPages; i++) {
-        const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: clampedScale });
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.max(1, Math.round(viewport.width));
-        canvas.height = Math.max(1, Math.round(viewport.height));
-        const ctx = canvas.getContext('2d');
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        
-        await page.render({ canvasContext: ctx, viewport }).promise;
+    onProgress(10, `Allocated ~${Math.round(targetBytesPerPage / 1024)} KB budget per page across ${numPages} page(s)...`);
 
-        const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', clampedQuality));
-        const imgBuffer = await blob.arrayBuffer();
-        const image = await newPdf.embedJpg(imgBuffer);
-        
-        const origViewport = page.getViewport({ scale: 1.0 });
-        const newPage = newPdf.addPage([origViewport.width, origViewport.height]);
-        newPage.drawImage(image, { x: 0, y: 0, width: origViewport.width, height: origViewport.height });
-      }
-      return await newPdf.save({ useObjectStreams: true });
-    };
+    const newPdf = await PDFLib.PDFDocument.create();
 
-    // Calculate dynamic budget bounds per page
-    const targetBytesPerPage = targetBytes / numPages;
-    let lowS = 0.25, highS = 1.8;
-    let lowQ = 0.10, highQ = 0.90;
+    // -------------------------------------------------------------
+    // PDF -> Page Image -> Per-Page Target KB Compression -> PDF
+    // -------------------------------------------------------------
+    for (let i = 1; i <= numPages; i++) {
+      const page = await pdf.getPage(i);
+      const origViewport = page.getViewport({ scale: 1.0 });
 
-    if (targetBytesPerPage < 15000) {
-      highS = 0.70;
-      highQ = 0.45;
-      lowS = 0.20;
-      lowQ = 0.08;
-    } else if (targetBytesPerPage < 40000) {
-      highS = 1.05;
-      highQ = 0.65;
-      lowS = 0.40;
-      lowQ = 0.20;
-    } else if (targetBytesPerPage < 100000) {
-      highS = 1.5;
-      highQ = 0.80;
-      lowS = 0.70;
-      lowQ = 0.40;
-    } else {
-      highS = 2.0;
-      highQ = 0.92;
-      lowS = 1.0;
-      lowQ = 0.60;
-    }
+      // Determine initial crisp render scale based on per-page byte budget
+      let renderScale = 1.8;
+      if (targetBytesPerPage < 15000) renderScale = 1.0;
+      else if (targetBytesPerPage < 35000) renderScale = 1.3;
+      else if (targetBytesPerPage < 75000) renderScale = 1.5;
 
-    let bestBuffer = null;
-    let bestSize = Infinity;
-    const maxPasses = 6;
-    let pass = 1;
+      const viewport = page.getViewport({ scale: renderScale });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(viewport.width));
+      canvas.height = Math.max(1, Math.round(viewport.height));
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      await page.render({ canvasContext: ctx, viewport }).promise;
 
-    while (pass <= maxPasses) {
-      const currentScale = (lowS + highS) / 2;
-      const currentQuality = (lowQ + highQ) / 2;
-      const progressPercent = Math.round(20 + ((pass / maxPasses) * 70));
-      onProgress(progressPercent, `Pass ${pass}/${maxPasses}: Optimizing size to ${targetKB} KB target (${Math.round(currentQuality * 100)}% quality)...`);
+      // Binary search per-page JPEG quality to hit exact page budget
+      let lowQ = 0.05, highQ = 0.95;
+      let bestBlob = null;
+      let bestBlobSize = 0;
 
-      const pdfBytes = await renderPdfWithParams(currentScale, currentQuality);
-      const currentSize = pdfBytes.byteLength;
+      for (let pass = 0; pass < 6; pass++) {
+        const q = (lowQ + highQ) / 2;
+        const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', q));
+        if (!blob) break;
 
-      if (currentSize <= targetBytes) {
-        // Fits under target!
-        if (bestSize > targetBytes || currentSize > bestSize) {
-          bestSize = currentSize;
-          bestBuffer = pdfBytes;
+        if (blob.size <= targetBytesPerPage) {
+          if (blob.size > bestBlobSize) {
+            bestBlobSize = blob.size;
+            bestBlob = blob;
+          }
+          if (blob.size >= targetBytesPerPage * 0.94) break;
+          lowQ = q;
+        } else {
+          highQ = q;
         }
-
-        if (currentSize >= targetBytes * 0.92) {
-          break; // Optimal match within 8% of target ceiling
-        }
-
-        lowS = currentScale;
-        lowQ = Math.min(0.95, currentQuality + 0.05);
-      } else {
-        // Too large, scale down
-        highS = currentScale;
-        highQ = Math.max(0.08, currentQuality - 0.08);
       }
-      pass++;
-    }
 
-    // Strict ceiling convergence if still over target
-    if ((!bestBuffer || bestSize > targetBytes) && strictCeiling) {
-      onProgress(92, "Applying strict convergence to guarantee <= target KB limit...");
-      let fallbackScale = Math.max(0.2, (lowS + highS) / 2 * 0.75);
-      let fallbackQuality = Math.max(0.1, (lowQ + highQ) / 2 * 0.75);
-
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        const fallbackBytes = await renderPdfWithParams(fallbackScale, fallbackQuality);
-        if (fallbackBytes.byteLength <= targetBytes) {
-          bestBuffer = fallbackBytes;
-          bestSize = fallbackBytes.byteLength;
-          break;
+      // If quality alone cannot fit under budget, scale down canvas proportionally
+      if (!bestBlob || bestBlobSize > targetBytesPerPage) {
+        const testBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.15));
+        if (testBlob && testBlob.size > targetBytesPerPage) {
+          const miniCanvas = document.createElement('canvas');
+          const downRatio = Math.max(0.25, Math.sqrt(targetBytesPerPage / testBlob.size) * 0.94);
+          miniCanvas.width = Math.max(1, Math.round(canvas.width * downRatio));
+          miniCanvas.height = Math.max(1, Math.round(canvas.height * downRatio));
+          const miniCtx = miniCanvas.getContext('2d');
+          miniCtx.imageSmoothingEnabled = true;
+          miniCtx.imageSmoothingQuality = 'high';
+          miniCtx.drawImage(canvas, 0, 0, miniCanvas.width, miniCanvas.height);
+          bestBlob = await new Promise(r => miniCanvas.toBlob(r, 'image/jpeg', 0.70));
+        } else {
+          bestBlob = testBlob;
         }
-        fallbackScale = Math.max(0.18, fallbackScale * 0.75);
-        fallbackQuality = Math.max(0.08, fallbackQuality * 0.75);
       }
+
+      if (!bestBlob) {
+        bestBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.1));
+      }
+
+      const imgBuffer = await bestBlob.arrayBuffer();
+      const image = await newPdf.embedJpg(imgBuffer);
+      const newPage = newPdf.addPage([origViewport.width, origViewport.height]);
+      newPage.drawImage(image, { x: 0, y: 0, width: origViewport.width, height: origViewport.height });
+
+      const pct = Math.round(15 + ((i / numPages) * 75));
+      onProgress(pct, `Compressed page ${i} of ${numPages} (${Math.round(bestBlob.size / 1024)} KB)...`);
     }
 
-    if (!bestBuffer) {
-      onProgress(95, "Applying maximum compression...");
-      bestBuffer = await renderPdfWithParams(0.35, 0.20);
-      bestSize = bestBuffer.byteLength;
-    }
-
-    const finalBlob = new Blob([bestBuffer], { type: 'application/pdf' });
+    onProgress(95, "Compiling final PDF document...");
+    const pdfBytes = await newPdf.save({ useObjectStreams: true });
+    const finalBlob = new Blob([pdfBytes], { type: 'application/pdf' });
     const finalSizeKB = Math.round(finalBlob.size / 1024);
     const originalSizeKB = Math.round(originalBytes / 1024);
-    const reductionPercent = Math.max(0, Math.round(((originalBytes - bestSize) / originalBytes) * 100));
+    const reductionPercent = Math.max(0, Math.round(((originalBytes - finalBlob.size) / originalBytes) * 100));
 
-    onProgress(100, `Complete! Final Size: ${finalSizeKB} KB (${reductionPercent}% reduction)`);
+    onProgress(100, `Complete! Final Size: ${finalSizeKB} KB (Target: ${targetKB} KB)`);
     return {
       blob: finalBlob,
       blobUrl: URL.createObjectURL(finalBlob),
