@@ -903,13 +903,12 @@ const ConvertTools = {
 // 37 Tools Catalog
 // -------------------------------------------------------------
 const ALL_TOOLS = [
-  { id: 'pdf-merge', name: 'Merge PDF', category: 'pdf-core', catName: 'PDF Core & Organization', desc: 'Combine multiple PDF documents into a single file in any chosen order.', icon: 'layers', accept: '.pdf', multiple: true },
-  { id: 'pdf-split', name: 'Split PDF', category: 'pdf-core', catName: 'PDF Core & Organization', desc: 'Separate one page, a specific range, or split all pages into independent PDF files.', icon: 'scissors', accept: '.pdf', multiple: false },
-  { id: 'pdf-remove-pages', name: 'Remove Pages', category: 'pdf-core', catName: 'PDF Core & Organization', desc: 'Specify or select page numbers to exclude from your PDF document.', icon: 'file-minus', accept: '.pdf', multiple: false },
-  { id: 'pdf-extract-pages', name: 'Extract Pages', category: 'pdf-core', catName: 'PDF Core & Organization', desc: 'Pull specific pages out of a PDF and compile them into a brand-new document.', icon: 'file-down', accept: '.pdf', multiple: false },
-  { id: 'pdf-organize', name: 'Organize PDF', category: 'pdf-core', catName: 'PDF Core & Organization', desc: 'Reorder, delete, or rearrange page sequences in your document.', icon: 'columns', accept: '.pdf', multiple: true },
-  { id: 'pdf-rotate', name: 'Rotate PDF', category: 'pdf-core', catName: 'PDF Core & Organization', desc: 'Change orientation (90°, 180°, 270°) of entire files or pages.', icon: 'rotate-cw', accept: '.pdf', multiple: false },
-  { id: 'pdf-crop', name: 'Crop PDF', category: 'pdf-core', catName: 'PDF Core & Organization', desc: 'Adjust the visible printable bounding box area of a PDF document.', icon: 'crop', accept: '.pdf', multiple: false },
+  // 1. Unified PDF Core & Page Studio (Consolidates Merge, Split, Remove, Extract, Organize, Rotate, Crop)
+  { id: 'pdf-organizer', name: 'PDF Organizer Studio (All-in-One)', category: 'pdf-core', catName: 'PDF Core & Page Studio', desc: 'Merge, split, extract, reorder, delete, rotate, and crop PDF sheets visually.', icon: 'layers', accept: '.pdf', multiple: true, badge: 'Unified 7-in-1' },
+  { id: 'pdf-merge', name: 'Merge PDF', category: 'pdf-core', catName: 'PDF Core & Page Studio', desc: 'Combine multiple PDF documents into a single file in any chosen order.', icon: 'layers', accept: '.pdf', multiple: true },
+  { id: 'pdf-split', name: 'Split / Extract Pages', category: 'pdf-core', catName: 'PDF Core & Page Studio', desc: 'Separate pages, custom ranges, or extract selected sheets into new files.', icon: 'scissors', accept: '.pdf', multiple: true },
+  { id: 'pdf-organize', name: 'Organize, Rotate & Delete', category: 'pdf-core', catName: 'PDF Core & Page Studio', desc: 'Visually reorder sheets, rotate individual/all pages, and remove unwanted sheets.', icon: 'columns', accept: '.pdf', multiple: true },
+  { id: 'pdf-crop', name: 'Crop PDF', category: 'pdf-core', catName: 'PDF Core & Page Studio', desc: 'Adjust printable bounding box margins across all or selected sheets.', icon: 'crop', accept: '.pdf', multiple: true },
 
   { id: 'pdf-compress', name: 'Compress & Resize PDF', category: 'pdf-sec', catName: 'PDF Optimization & Security', desc: 'Resize PDFs to desired KB sizes effortlessly with 100% accuracy targeting.', icon: 'file-heart', accept: '.pdf', multiple: false, badge: '100% Target KB' },
   { id: 'pdf-repair', name: 'Repair PDF', category: 'pdf-sec', catName: 'PDF Optimization & Security', desc: 'Scan broken streams, fix corrupted XREF tables, and salvage unreadable PDF bytes.', icon: 'wrench', accept: '.pdf', multiple: false },
@@ -1312,7 +1311,35 @@ class DocuvateApp {
 
     let controlsHtml = '';
 
-    if (toolId === 'pdf-compress' || toolId === 'image-compress') {
+    if (toolId === 'pdf-organizer' || toolId === 'pdf-merge' || toolId === 'pdf-split' || toolId === 'pdf-organize' || toolId === 'pdf-crop') {
+      controlsHtml = `
+        <div>
+          <label style="font-size:0.75rem; font-weight:800; color:#475569; display:block; margin-bottom:0.35rem; text-transform:uppercase;">Action / Output Mode</label>
+          <div class="preset-grid" style="grid-template-columns: repeat(2, 1fr);">
+            <button class="preset-btn active" data-export-mode="merge">Save / Merge All</button>
+            <button class="preset-btn" data-export-mode="split">Split Individual</button>
+            <button class="preset-btn" data-export-mode="extract">Extract Selected</button>
+            <button class="preset-btn" data-export-mode="crop">Crop Margins</button>
+          </div>
+        </div>
+
+        <div id="cropMarginControls" style="display:none; background:#f8fafc; padding:0.65rem; border-radius:8px; border:1px solid #e2e8f0;">
+          <label style="font-size:0.75rem; font-weight:700; color:#475569; display:block;">Crop Margins (%)</label>
+          <input type="range" id="cropMarginSlider" min="2" max="40" value="10" style="width:100%; margin-top:0.35rem; accent-color:#e11d48;" />
+          <span id="cropMarginVal" style="font-size:0.75rem; font-weight:800; color:#e11d48; display:block; text-align:right;">10% Margin</span>
+        </div>
+
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:0.65rem; font-size:0.75rem; color:#475569;">
+          <p><strong>Interactive Features:</strong></p>
+          <ul style="margin-left:1rem; margin-top:0.25rem; font-size:0.7rem; color:#64748b; line-height:1.4;">
+            <li>Drag & drop page cards to reorder</li>
+            <li>Click Rotate (↺) on any card for 90° rotation</li>
+            <li>Click Trash (🗑) to exclude pages</li>
+            <li>Click any page to toggle selection</li>
+          </ul>
+        </div>
+      `;
+    } else if (toolId === 'pdf-compress' || toolId === 'image-compress') {
       controlsHtml = `
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:#64748b;">Target Sizing</span>
@@ -1410,8 +1437,28 @@ class DocuvateApp {
     const presetBtns = sidebarArea.querySelectorAll('.preset-btn[data-target]');
     const examBtns = sidebarArea.querySelectorAll('.preset-btn[data-exam]');
 
-    // Preset buttons
-    presetBtns.forEach(btn => {
+    // Export mode buttons
+    const exportBtns = sidebarArea.querySelectorAll('.preset-btn[data-export-mode]');
+    const cropMarginControls = sidebarArea.querySelector('#cropMarginControls');
+    const cropMarginSlider = sidebarArea.querySelector('#cropMarginSlider');
+    const cropMarginVal = sidebarArea.querySelector('#cropMarginVal');
+
+    exportBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        exportBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const mode = btn.dataset.exportMode;
+        if (cropMarginControls) {
+          cropMarginControls.style.display = mode === 'crop' ? 'block' : 'none';
+        }
+      });
+    });
+
+    if (cropMarginSlider && cropMarginVal) {
+      cropMarginSlider.addEventListener('input', () => {
+        cropMarginVal.textContent = `${cropMarginSlider.value}% Margin`;
+      });
+    }
       btn.addEventListener('click', () => {
         presetBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
@@ -1629,12 +1676,37 @@ class DocuvateApp {
       const file = this.selectedFiles[0];
       let result = null;
 
-      if (toolId === 'pdf-merge' || toolId === 'pdf-organize' || toolId === 'pdf-split' || toolId === 'pdf-remove-pages' || toolId === 'pdf-extract-pages') {
-        result = await PdfTools.assemblePdfFromPages(this.pages, onProgress);
-      } else if (toolId === 'pdf-rotate') {
-        result = await PdfTools.rotatePdf(file, 90, onProgress);
-      } else if (toolId === 'pdf-crop') {
-        result = await PdfTools.cropPdf(file, 10, onProgress);
+      if (toolId === 'pdf-organizer' || toolId === 'pdf-merge' || toolId === 'pdf-split' || toolId === 'pdf-organize' || toolId === 'pdf-crop' || toolId === 'pdf-remove-pages' || toolId === 'pdf-extract-pages' || toolId === 'pdf-rotate') {
+        const activeExportMode = sidebarArea.querySelector('.preset-btn[data-export-mode].active')?.dataset?.exportMode || 'merge';
+        const cropMarginPct = parseInt(sidebarArea.querySelector('#cropMarginSlider')?.value || 10);
+
+        if (activeExportMode === 'crop') {
+          const compiled = await PdfTools.assemblePdfFromPages(this.pages, onProgress);
+          const compiledFile = new File([compiled.blob], compiled.fileName, { type: 'application/pdf' });
+          result = await PdfTools.cropPdf(compiledFile, cropMarginPct, onProgress);
+        } else if (activeExportMode === 'split' && window.JSZip) {
+          onProgress(20, "Generating individual split PDF pages...");
+          const zip = new JSZip();
+          const selectedPages = this.pages.filter(p => p.selected);
+
+          for (let i = 0; i < selectedPages.length; i++) {
+            onProgress(Math.round(25 + (i / selectedPages.length) * 65), `Compiling sheet ${i + 1} of ${selectedPages.length}...`);
+            const single = await PdfTools.assemblePdfFromPages([selectedPages[i]], () => {});
+            zip.file(`page-${selectedPages[i].pageNumber}-${selectedPages[i].fileName}`, single.blob);
+          }
+
+          onProgress(95, "Zipping split PDF bundle...");
+          const zipBlob = await zip.generateAsync({ type: 'blob' });
+          result = {
+            blob: zipBlob,
+            blobUrl: URL.createObjectURL(zipBlob),
+            fileName: 'split-pages-bundle.zip',
+            sizeKB: Math.round(zipBlob.size / 1024),
+            totalPages: selectedPages.length
+          };
+        } else {
+          result = await PdfTools.assemblePdfFromPages(this.pages, onProgress);
+        }
       } else if (toolId === 'pdf-compress') {
         const targetKB = sidebarArea.querySelector('#targetKbInput')?.value || 200;
         const strictCeiling = sidebarArea.querySelector('#strictCeilingCheck')?.checked ?? true;
