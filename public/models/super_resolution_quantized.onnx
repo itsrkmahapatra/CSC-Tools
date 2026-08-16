@@ -1,5 +1,0 @@
-# Placeholder for AI Upscaling Model
-# In a real production environment, this file must contain the actual binary data 
-# for the super_resolution_quantized.onnx model.
-# Due to file size constraints, please upload your specific ONNX model binary 
-# to this location (public/models/super_resolution_quantized.onnx).
