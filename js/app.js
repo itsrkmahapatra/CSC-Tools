@@ -166,7 +166,7 @@ const PdfTools = {
 
   async compressPdfDirect(file, targetKB, strictCeiling = true, onProgress = () => {}) {
     const originalBytes = file.size;
-    const targetBytes = Math.max(5 * 1024, Math.round(targetKB * 1024));
+    const targetBytes = Math.max(5 * 1024, Math.round(Number(targetKB) * 1024));
     onProgress(5, "Analyzing document & attempting lossless vector stream optimization...");
 
     const fileBuffer = await file.arrayBuffer();
@@ -180,7 +180,7 @@ const PdfTools = {
       vectorPdf.setAuthor('');
       vectorPdf.setSubject('');
       vectorPdf.setKeywords([]);
-      vectorPdf.setProducer('Docuvate High-Fidelity');
+      vectorPdf.setProducer('Docuvate');
       vectorPdf.setCreator('Docuvate');
 
       const losslessBytes = await vectorPdf.save({ useObjectStreams: true, addDefaultPage: false });
@@ -197,7 +197,7 @@ const PdfTools = {
           fileName: `resized-${targetKB}kb-${file.name}`,
           finalSizeKB,
           originalSizeKB,
-          targetKB,
+          targetKB: Number(targetKB),
           reductionPercent,
           numPages: vectorPdf.getPageCount()
         };
@@ -207,7 +207,7 @@ const PdfTools = {
     }
 
     // -----------------------------------------------------------------
-    // STEP 2: High-DPI Crisp Vector-to-Image Dynamic Budget Compression
+    // STEP 2: Multi-Pass PDF -> Image -> Strict Budget -> PDF Pipeline
     // -----------------------------------------------------------------
     onProgress(15, "Calibrating High-DPI crisp page rendering...");
     const pdf = await pdfjsLib.getDocument({ data: fileBuffer }).promise;
@@ -215,98 +215,101 @@ const PdfTools = {
 
     if (numPages === 0) throw new Error("The selected PDF contains no pages.");
 
-    // Reserve structural PDF overhead
-    const pdfOverheadBytes = Math.round(2048 + (numPages * 512));
-    let remainingBudget = Math.max(1024 * numPages, targetBytes - pdfOverheadBytes);
+    const buildPdfWithBudget = async (availableBytes) => {
+      const overhead = Math.round(3072 + (numPages * 600));
+      const netBudget = Math.max(1024 * numPages, availableBytes - overhead);
+      let remaining = netBudget;
+      const doc = await PDFLib.PDFDocument.create();
 
-    const newPdf = await PDFLib.PDFDocument.create();
+      for (let i = 1; i <= numPages; i++) {
+        const page = await pdf.getPage(i);
+        const origViewport = page.getViewport({ scale: 1.0 });
+        const pagesLeft = numPages - i + 1;
+        const pageBudget = Math.floor(remaining / pagesLeft);
 
-    for (let i = 1; i <= numPages; i++) {
-      const page = await pdf.getPage(i);
-      const origViewport = page.getViewport({ scale: 1.0 });
-      const pagesLeft = numPages - i + 1;
-      const targetPageBudget = Math.floor(remainingBudget / pagesLeft);
+        let renderScale = 2.0;
+        if (pageBudget < 20000) renderScale = 1.25;
+        else if (pageBudget < 40000) renderScale = 1.5;
+        else if (pageBudget < 80000) renderScale = 1.8;
 
-      // High-DPI Scale selection: keep resolution high (1.5x - 2.2x) so text never blurs
-      let renderScale = 2.0; // Crisp 150-200 DPI
-      if (targetPageBudget < 18000) renderScale = 1.25;
-      else if (targetPageBudget < 35000) renderScale = 1.5;
-      else if (targetPageBudget < 70000) renderScale = 1.8;
+        const viewport = page.getViewport({ scale: renderScale });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(viewport.width));
+        canvas.height = Math.max(1, Math.round(viewport.height));
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const viewport = page.getViewport({ scale: renderScale });
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.max(1, Math.round(viewport.width));
-      canvas.height = Math.max(1, Math.round(viewport.height));
-      const ctx = canvas.getContext('2d');
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
+        await page.render({ canvasContext: ctx, viewport }).promise;
 
-      // Crucial: Fill pure opaque white background to eliminate dark fringes/fuzziness
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+        let lowQ = 0.05, highQ = 0.95;
+        let bestBlob = null;
+        let bestBlobSize = 0;
 
-      await page.render({ canvasContext: ctx, viewport }).promise;
+        for (let pass = 0; pass < 6; pass++) {
+          const q = (lowQ + highQ) / 2;
+          const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', q));
+          if (!blob) break;
 
-      // Binary search for highest quality within page budget
-      let lowQ = 0.10, highQ = 0.95;
-      let bestBlob = null;
-      let bestBlobSize = 0;
-
-      for (let pass = 0; pass < 6; pass++) {
-        const q = (lowQ + highQ) / 2;
-        const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', q));
-        if (!blob) break;
-
-        if (blob.size <= targetPageBudget) {
-          if (blob.size > bestBlobSize) {
-            bestBlobSize = blob.size;
-            bestBlob = blob;
+          if (blob.size <= pageBudget) {
+            if (blob.size > bestBlobSize) {
+              bestBlobSize = blob.size;
+              bestBlob = blob;
+            }
+            if (blob.size >= pageBudget * 0.95) break;
+            lowQ = q;
+          } else {
+            highQ = q;
           }
-          if (blob.size >= targetPageBudget * 0.94) break;
-          lowQ = q;
-        } else {
-          highQ = q;
         }
-      }
 
-      // If budget is extremely strict, scale canvas cleanly with high-bicubic smoothing
-      if (!bestBlob || bestBlobSize > targetPageBudget) {
-        const testBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.20));
-        if (testBlob && testBlob.size > targetPageBudget) {
-          const miniCanvas = document.createElement('canvas');
-          const downRatio = Math.max(0.35, Math.sqrt(targetPageBudget / testBlob.size) * 0.95);
-          miniCanvas.width = Math.max(1, Math.round(canvas.width * downRatio));
-          miniCanvas.height = Math.max(1, Math.round(canvas.height * downRatio));
-          const miniCtx = miniCanvas.getContext('2d');
-          miniCtx.imageSmoothingEnabled = true;
-          miniCtx.imageSmoothingQuality = 'high';
-          miniCtx.fillStyle = '#ffffff';
-          miniCtx.fillRect(0, 0, miniCanvas.width, miniCanvas.height);
-          miniCtx.drawImage(canvas, 0, 0, miniCanvas.width, miniCanvas.height);
-          bestBlob = await new Promise(r => miniCanvas.toBlob(r, 'image/jpeg', 0.70));
-        } else {
-          bestBlob = testBlob;
+        if (!bestBlob || bestBlobSize > pageBudget) {
+          const testBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.15));
+          if (testBlob && testBlob.size > pageBudget) {
+            const miniCanvas = document.createElement('canvas');
+            const downRatio = Math.max(0.3, Math.sqrt(pageBudget / testBlob.size) * 0.92);
+            miniCanvas.width = Math.max(1, Math.round(canvas.width * downRatio));
+            miniCanvas.height = Math.max(1, Math.round(canvas.height * downRatio));
+            const miniCtx = miniCanvas.getContext('2d');
+            miniCtx.imageSmoothingEnabled = true;
+            miniCtx.imageSmoothingQuality = 'high';
+            miniCtx.fillStyle = '#ffffff';
+            miniCtx.fillRect(0, 0, miniCanvas.width, miniCanvas.height);
+            miniCtx.drawImage(canvas, 0, 0, miniCanvas.width, miniCanvas.height);
+            bestBlob = await new Promise(r => miniCanvas.toBlob(r, 'image/jpeg', 0.70));
+          } else {
+            bestBlob = testBlob;
+          }
         }
+
+        if (!bestBlob) bestBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.10));
+
+        remaining -= bestBlob.size;
+        const imgBuffer = await bestBlob.arrayBuffer();
+        const image = await doc.embedJpg(imgBuffer);
+        const newPage = doc.addPage([origViewport.width, origViewport.height]);
+        newPage.drawImage(image, { x: 0, y: 0, width: origViewport.width, height: origViewport.height });
+
+        const pct = Math.round(20 + ((i / numPages) * 65));
+        onProgress(pct, `Optimizing page ${i} of ${numPages} (${Math.round(bestBlob.size / 1024)} KB)...`);
       }
 
-      if (!bestBlob) {
-        bestBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.15));
-      }
+      return await doc.save({ useObjectStreams: true });
+    };
 
-      // Deduct used bytes from remaining budget for next pages
-      remainingBudget -= bestBlob.size;
+    let pdfBytes = await buildPdfWithBudget(targetBytes);
 
-      const imgBuffer = await bestBlob.arrayBuffer();
-      const image = await newPdf.embedJpg(imgBuffer);
-      const newPage = newPdf.addPage([origViewport.width, origViewport.height]);
-      newPage.drawImage(image, { x: 0, y: 0, width: origViewport.width, height: origViewport.height });
-
-      const pct = Math.round(20 + ((i / numPages) * 75));
-      onProgress(pct, `High-DPI optimized page ${i} of ${numPages} (${Math.round(bestBlob.size / 1024)} KB)...`);
+    // Strict Convergence: If total output size still exceeds target, scale down until <= targetBytes
+    let attempts = 0;
+    while (pdfBytes.byteLength > targetBytes && attempts < 3) {
+      attempts++;
+      const ratio = (targetBytes / pdfBytes.byteLength) * 0.94;
+      onProgress(85 + (attempts * 4), `Strict calibration pass ${attempts}: fine-tuning to guarantee <= ${targetKB} KB...`);
+      pdfBytes = await buildPdfWithBudget(targetBytes * ratio);
     }
 
-    onProgress(96, "Finalizing and saving optimized PDF...");
-    const pdfBytes = await newPdf.save({ useObjectStreams: true });
     const finalBlob = new Blob([pdfBytes], { type: 'application/pdf' });
     const finalSizeKB = Math.round(finalBlob.size / 1024);
     const originalSizeKB = Math.round(originalBytes / 1024);
@@ -319,7 +322,7 @@ const PdfTools = {
       fileName: `resized-${targetKB}kb-${file.name}`,
       finalSizeKB,
       originalSizeKB,
-      targetKB,
+      targetKB: Number(targetKB),
       reductionPercent,
       numPages
     };
