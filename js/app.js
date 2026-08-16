@@ -167,54 +167,51 @@ const PdfTools = {
   async compressPdfDirect(file, targetKB, strictCeiling = true, onProgress = () => {}) {
     const originalBytes = file.size;
     const targetBytes = Math.max(5 * 1024, Math.round(targetKB * 1024));
-    onProgress(10, "Attempting Lossless Vector & Stream Compression...");
+    onProgress(5, "Analyzing document structure and pages...");
 
     const fileBuffer = await file.arrayBuffer();
 
     // -------------------------------------------------------------
-    // Pass 1: Pure Lossless Vector Optimization (Zero Visual Loss)
+    // Pass 1: Lossless Vector & Stream Optimization
     // -------------------------------------------------------------
     try {
       const vectorPdf = await PDFLib.PDFDocument.load(fileBuffer, { ignoreEncryption: true });
-      // Strip redundant metadata and enable full object stream compression
       vectorPdf.setTitle('');
       vectorPdf.setAuthor('');
       vectorPdf.setSubject('');
       vectorPdf.setKeywords([]);
-      vectorPdf.setProducer('Docuvate High-Fidelity Engine');
+      vectorPdf.setProducer('Docuvate');
       vectorPdf.setCreator('Docuvate');
 
       const losslessBytes = await vectorPdf.save({ useObjectStreams: true, addDefaultPage: false });
       
       // If lossless vector optimization meets target KB, return immediately (100% crystal clear)
-      if (losslessBytes.byteLength <= targetBytes || losslessBytes.byteLength < originalBytes * 0.85) {
-        if (losslessBytes.byteLength <= targetBytes) {
-          const finalBlob = new Blob([losslessBytes], { type: 'application/pdf' });
-          const finalSizeKB = Math.round(finalBlob.size / 1024);
-          const originalSizeKB = Math.round(originalBytes / 1024);
-          const reductionPercent = Math.max(0, Math.round(((originalBytes - losslessBytes.byteLength) / originalBytes) * 100));
+      if (losslessBytes.byteLength <= targetBytes) {
+        const finalBlob = new Blob([losslessBytes], { type: 'application/pdf' });
+        const finalSizeKB = Math.round(finalBlob.size / 1024);
+        const originalSizeKB = Math.round(originalBytes / 1024);
+        const reductionPercent = Math.max(0, Math.round(((originalBytes - losslessBytes.byteLength) / originalBytes) * 100));
 
-          onProgress(100, `Lossless Vector Complete! Output: ${finalSizeKB} KB (100% Visual Quality)`);
-          return {
-            blob: finalBlob,
-            blobUrl: URL.createObjectURL(finalBlob),
-            fileName: `crisp-${targetKB}kb-${file.name}`,
-            finalSizeKB,
-            originalSizeKB,
-            targetKB,
-            reductionPercent,
-            numPages: vectorPdf.getPageCount()
-          };
-        }
+        onProgress(100, `Lossless Complete! Output: ${finalSizeKB} KB (100% Vector Quality)`);
+        return {
+          blob: finalBlob,
+          blobUrl: URL.createObjectURL(finalBlob),
+          fileName: `resized-${targetKB}kb-${file.name}`,
+          finalSizeKB,
+          originalSizeKB,
+          targetKB,
+          reductionPercent,
+          numPages: vectorPdf.getPageCount()
+        };
       }
     } catch (losslessErr) {
-      console.warn("Vector pass skipped, proceeding to High-DPI crisp optimization:", losslessErr);
+      console.warn("Vector pass skipped:", losslessErr);
     }
 
     // -------------------------------------------------------------
-    // Pass 2: High-DPI Crisp Multi-Pass (Preserves Sharp Text & Lines)
+    // Pass 2: High-Precision Budget-Driven Multi-Pass Binary Search
     // -------------------------------------------------------------
-    onProgress(25, "Calibrating High-DPI Crisp Rendering...");
+    onProgress(15, "Calibrating target size & page budgets...");
     const pdf = await pdfjsLib.getDocument({ data: fileBuffer }).promise;
     const numPages = pdf.numPages;
 
@@ -222,10 +219,12 @@ const PdfTools = {
 
     const renderPdfWithParams = async (scale, quality) => {
       const newPdf = await PDFLib.PDFDocument.create();
+      const clampedScale = Math.max(0.2, Math.min(2.5, scale));
+      const clampedQuality = Math.max(0.05, Math.min(0.95, quality));
+
       for (let i = 1; i <= numPages; i++) {
         const page = await pdf.getPage(i);
-        // Maintain high resolution (minimum 1.5x scale for sharp text rendering)
-        const viewport = page.getViewport({ scale: Math.max(1.2, scale) });
+        const viewport = page.getViewport({ scale: clampedScale });
         const canvas = document.createElement('canvas');
         canvas.width = Math.max(1, Math.round(viewport.width));
         canvas.height = Math.max(1, Math.round(viewport.height));
@@ -235,12 +234,10 @@ const PdfTools = {
         
         await page.render({ canvasContext: ctx, viewport }).promise;
 
-        // High-quality JPEG stream with optimal chroma
-        const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', Math.max(0.40, Math.min(0.95, quality))));
+        const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', clampedQuality));
         const imgBuffer = await blob.arrayBuffer();
         const image = await newPdf.embedJpg(imgBuffer);
         
-        // Preserve original page aspect ratio & dimensions
         const origViewport = page.getViewport({ scale: 1.0 });
         const newPage = newPdf.addPage([origViewport.width, origViewport.height]);
         newPage.drawImage(image, { x: 0, y: 0, width: origViewport.width, height: origViewport.height });
@@ -248,60 +245,89 @@ const PdfTools = {
       return await newPdf.save({ useObjectStreams: true });
     };
 
-    // Calculate intelligent quality ranges based on target bytes per page
+    // Calculate dynamic budget bounds per page
     const targetBytesPerPage = targetBytes / numPages;
-    let lowQ = 0.45, highQ = 0.92;
-    let initialScale = 2.0; // High-DPI 150-200 DPI base for crisp text
+    let lowS = 0.25, highS = 1.8;
+    let lowQ = 0.10, highQ = 0.90;
 
-    if (targetBytesPerPage < 30000) {
-      initialScale = 1.4;
+    if (targetBytesPerPage < 15000) {
+      highS = 0.70;
+      highQ = 0.45;
+      lowS = 0.20;
+      lowQ = 0.08;
+    } else if (targetBytesPerPage < 40000) {
+      highS = 1.05;
+      highQ = 0.65;
+      lowS = 0.40;
+      lowQ = 0.20;
+    } else if (targetBytesPerPage < 100000) {
+      highS = 1.5;
+      highQ = 0.80;
+      lowS = 0.70;
       lowQ = 0.40;
-      highQ = 0.75;
-    } else if (targetBytesPerPage < 80000) {
-      initialScale = 1.8;
-      lowQ = 0.55;
-      highQ = 0.85;
     } else {
-      initialScale = 2.2;
-      lowQ = 0.70;
-      highQ = 0.95;
+      highS = 2.0;
+      highQ = 0.92;
+      lowS = 1.0;
+      lowQ = 0.60;
     }
 
     let bestBuffer = null;
-    let bestSize = 0;
-    const maxPasses = 5;
+    let bestSize = Infinity;
+    const maxPasses = 6;
     let pass = 1;
-    let currentScale = initialScale;
 
     while (pass <= maxPasses) {
+      const currentScale = (lowS + highS) / 2;
       const currentQuality = (lowQ + highQ) / 2;
-      const progressPercent = Math.round(30 + ((pass / maxPasses) * 60));
-      onProgress(progressPercent, `Pass ${pass}/${maxPasses}: High-DPI crisp optimization (${Math.round(currentQuality * 100)}% quality)...`);
+      const progressPercent = Math.round(20 + ((pass / maxPasses) * 70));
+      onProgress(progressPercent, `Pass ${pass}/${maxPasses}: Optimizing size to ${targetKB} KB target (${Math.round(currentQuality * 100)}% quality)...`);
 
       const pdfBytes = await renderPdfWithParams(currentScale, currentQuality);
       const currentSize = pdfBytes.byteLength;
 
       if (currentSize <= targetBytes) {
-        if (currentSize > bestSize) {
+        // Fits under target!
+        if (bestSize > targetBytes || currentSize > bestSize) {
           bestSize = currentSize;
           bestBuffer = pdfBytes;
         }
-        if (currentSize >= targetBytes * 0.92) break;
-        lowQ = currentQuality;
-      } else {
-        highQ = currentQuality;
-        // If quality alone cannot fit target, gently adjust scale while maintaining crispness
-        if (highQ - lowQ < 0.08 && currentScale > 1.2) {
-          currentScale = Math.max(1.2, currentScale * 0.85);
-          highQ = 0.80;
+
+        if (currentSize >= targetBytes * 0.92) {
+          break; // Optimal match within 8% of target ceiling
         }
+
+        lowS = currentScale;
+        lowQ = Math.min(0.95, currentQuality + 0.05);
+      } else {
+        // Too large, scale down
+        highS = currentScale;
+        highQ = Math.max(0.08, currentQuality - 0.08);
       }
       pass++;
     }
 
+    // Strict ceiling convergence if still over target
+    if ((!bestBuffer || bestSize > targetBytes) && strictCeiling) {
+      onProgress(92, "Applying strict convergence to guarantee <= target KB limit...");
+      let fallbackScale = Math.max(0.2, (lowS + highS) / 2 * 0.75);
+      let fallbackQuality = Math.max(0.1, (lowQ + highQ) / 2 * 0.75);
+
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        const fallbackBytes = await renderPdfWithParams(fallbackScale, fallbackQuality);
+        if (fallbackBytes.byteLength <= targetBytes) {
+          bestBuffer = fallbackBytes;
+          bestSize = fallbackBytes.byteLength;
+          break;
+        }
+        fallbackScale = Math.max(0.18, fallbackScale * 0.75);
+        fallbackQuality = Math.max(0.08, fallbackQuality * 0.75);
+      }
+    }
+
     if (!bestBuffer) {
-      onProgress(92, "Applying optimized compression to match target limit...");
-      bestBuffer = await renderPdfWithParams(1.3, 0.48);
+      onProgress(95, "Applying maximum compression...");
+      bestBuffer = await renderPdfWithParams(0.35, 0.20);
       bestSize = bestBuffer.byteLength;
     }
 
@@ -310,11 +336,11 @@ const PdfTools = {
     const originalSizeKB = Math.round(originalBytes / 1024);
     const reductionPercent = Math.max(0, Math.round(((originalBytes - bestSize) / originalBytes) * 100));
 
-    onProgress(100, `Crisp Complete! Output: ${finalSizeKB} KB (${reductionPercent}% reduction)`);
+    onProgress(100, `Complete! Final Size: ${finalSizeKB} KB (${reductionPercent}% reduction)`);
     return {
       blob: finalBlob,
       blobUrl: URL.createObjectURL(finalBlob),
-      fileName: `crisp-${targetKB}kb-${file.name}`,
+      fileName: `resized-${targetKB}kb-${file.name}`,
       finalSizeKB,
       originalSizeKB,
       targetKB,
@@ -874,7 +900,7 @@ class DocuvateApp {
 
   openPdfStudio() {
     this.activeStudio = 'pdf';
-    this.activeModule = 'organize';
+    this.activeModule = 'compress';
     this.selectedFiles = [];
     this.pages = [];
     this.resultData = null;
@@ -1075,7 +1101,16 @@ class DocuvateApp {
 
         <button id="processBtn" class="btn-primary" style="background: ${isPdf ? 'var(--pdf-gradient)' : 'var(--image-gradient)'};" ${selCount === 0 ? 'disabled' : ''}>
           <i data-lucide="play" style="width: 18px; height: 18px; fill: currentColor;"></i>
-          <span>Apply & Process (${selCount} ${isPdf ? 'Pages' : 'Images'})</span>
+          <span>${
+            this.activeModule === 'compress' ? 'Compress Document (to Target KB)' :
+            this.activeModule === 'organize' ? 'Save & Organize Document' :
+            this.activeModule === 'sign' ? 'Apply Signature Stamp' :
+            this.activeModule === 'watermark' ? 'Apply Watermark' :
+            this.activeModule === 'numbers' ? 'Apply Page Numbers' :
+            this.activeModule === 'security' ? 'Apply Security Protection' :
+            this.activeModule === 'convert' ? 'Convert Document' :
+            'Apply & Process Document'
+          }</span>
         </button>
       </div>
     `;
