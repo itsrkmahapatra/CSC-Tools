@@ -101,57 +101,171 @@ const PdfTools = {
   },
 
   async compressPdf(file, targetKB, strictCeiling = true, onProgress = () => {}) {
-    return new Promise((resolve, reject) => {
-      onProgress(5, "Initializing Multi-Pass Compressor...");
-      
-      let worker;
-      try {
-        worker = new Worker('js/compressor.worker.js');
-      } catch (e) {
+    // If running under file:// or worker is blocked by browser CORS security, execute multi-pass in-thread directly
+    if (window.location.protocol === 'file:') {
+      return this.compressPdfDirect(file, targetKB, strictCeiling, onProgress);
+    }
+
+    try {
+      return await new Promise((resolve, reject) => {
+        onProgress(5, "Initializing Multi-Pass Compressor...");
+        let worker;
         try {
-          worker = new Worker('./js/compressor.worker.js');
-        } catch (e2) {
-          worker = new Worker('/Docuvate/js/compressor.worker.js');
+          worker = new Worker('js/compressor.worker.js');
+        } catch (e) {
+          try {
+            worker = new Worker('./js/compressor.worker.js');
+          } catch (e2) {
+            // Fallback immediately to in-thread
+            return this.compressPdfDirect(file, targetKB, strictCeiling, onProgress).then(resolve).catch(reject);
+          }
         }
+
+        worker.onmessage = (e) => {
+          const { type, message, percent, buffer, error, finalSizeKB, originalSizeKB, reductionPercent, numPages } = e.data;
+          if (type === 'PROGRESS') {
+            onProgress(percent, message);
+          } else if (type === 'COMPLETE') {
+            worker.terminate();
+            const blob = new Blob([buffer], { type: 'application/pdf' });
+            resolve({
+              blob,
+              blobUrl: URL.createObjectURL(blob),
+              fileName: `resized-${targetKB}kb-${file.name}`,
+              finalSizeKB: finalSizeKB || Math.round(blob.size / 1024),
+              originalSizeKB: originalSizeKB || Math.round(file.size / 1024),
+              targetKB,
+              reductionPercent: reductionPercent || 0,
+              numPages: numPages || 1
+            });
+          } else if (type === 'ERROR') {
+            worker.terminate();
+            this.compressPdfDirect(file, targetKB, strictCeiling, onProgress).then(resolve).catch(reject);
+          }
+        };
+
+        worker.onerror = (err) => {
+          worker.terminate();
+          this.compressPdfDirect(file, targetKB, strictCeiling, onProgress).then(resolve).catch(reject);
+        };
+
+        file.arrayBuffer().then((arrayBuffer) => {
+          worker.postMessage({
+            fileBuffer: arrayBuffer,
+            targetKB: Number(targetKB),
+            strictCeiling: Boolean(strictCeiling)
+          }, [arrayBuffer]);
+        }).catch(() => {
+          this.compressPdfDirect(file, targetKB, strictCeiling, onProgress).then(resolve).catch(reject);
+        });
+      });
+    } catch (err) {
+      return this.compressPdfDirect(file, targetKB, strictCeiling, onProgress);
+    }
+  },
+
+  async compressPdfDirect(file, targetKB, strictCeiling = true, onProgress = () => {}) {
+    const originalBytes = file.size;
+    const targetBytes = Math.max(5 * 1024, Math.round(targetKB * 1024));
+    onProgress(5, "Analyzing document structure and pages...");
+
+    const fileBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: fileBuffer }).promise;
+    const numPages = pdf.numPages;
+
+    if (numPages === 0) throw new Error("The selected PDF contains no pages.");
+
+    onProgress(10, `Document loaded (${numPages} page${numPages > 1 ? 's' : ''}). Calibrating target size...`);
+
+    const renderPdfWithParams = async (scale, quality) => {
+      const newPdf = await PDFLib.PDFDocument.create();
+      for (let i = 1; i <= numPages; i++) {
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(viewport.width));
+        canvas.height = Math.max(1, Math.round(viewport.height));
+        const ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport }).promise;
+
+        const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', Math.max(0.05, Math.min(0.98, quality))));
+        const imgBuffer = await blob.arrayBuffer();
+        const image = await newPdf.embedJpg(imgBuffer);
+        const newPage = newPdf.addPage([image.width, image.height]);
+        newPage.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
       }
+      return await newPdf.save();
+    };
 
-      worker.onmessage = (e) => {
-        const { type, message, percent, buffer, error, finalSizeKB, originalSizeKB, reductionPercent, numPages } = e.data;
-        
-        if (type === 'PROGRESS') {
-          onProgress(percent, message);
-        } else if (type === 'COMPLETE') {
-          worker.terminate();
-          const blob = new Blob([buffer], { type: 'application/pdf' });
-          resolve({
-            blob,
-            blobUrl: URL.createObjectURL(blob),
-            fileName: `resized-${targetKB}kb-${file.name}`,
-            finalSizeKB: finalSizeKB || Math.round(blob.size / 1024),
-            originalSizeKB: originalSizeKB || Math.round(file.size / 1024),
-            targetKB,
-            reductionPercent: reductionPercent || 0,
-            numPages: numPages || 1
-          });
-        } else if (type === 'ERROR') {
-          worker.terminate();
-          reject(new Error(error || 'PDF compression failed.'));
+    let lowS = 0.15, highS = 1.6;
+    let lowQ = 0.08, highQ = 0.95;
+    let bestBuffer = null;
+    let bestSize = 0;
+    const maxPasses = 6;
+    let pass = 1;
+
+    const targetBytesPerPage = targetBytes / numPages;
+    if (targetBytesPerPage < 15000) { highS = 0.7; highQ = 0.65; }
+    else if (targetBytesPerPage < 40000) { highS = 1.0; highQ = 0.80; }
+
+    while (pass <= maxPasses) {
+      const currentScale = (lowS + highS) / 2;
+      const currentQuality = (lowQ + highQ) / 2;
+      const progressPercent = Math.round(15 + ((pass / maxPasses) * 75));
+      onProgress(progressPercent, `Pass ${pass}/${maxPasses}: Optimizing resolution (${Math.round(currentScale * 100)}%) & quality (${Math.round(currentQuality * 100)}%)...`);
+
+      const pdfBytes = await renderPdfWithParams(currentScale, currentQuality);
+      const currentSize = pdfBytes.byteLength;
+
+      if (currentSize <= targetBytes) {
+        if (currentSize > bestSize) {
+          bestSize = currentSize;
+          bestBuffer = pdfBytes;
         }
-      };
+        if (currentSize >= targetBytes * 0.95) break;
+        lowS = currentScale;
+        lowQ = Math.min(0.95, currentQuality + 0.05);
+      } else {
+        highS = currentScale;
+        highQ = Math.max(0.08, currentQuality - 0.08);
+      }
+      pass++;
+    }
 
-      worker.onerror = (err) => {
-        worker.terminate();
-        reject(new Error("Worker error: " + (err.message || 'Worker thread blocked')));
-      };
+    if (strictCeiling && bestBuffer && bestSize > targetBytes) {
+      onProgress(93, "Applying fine-tune adjustment for 100% accuracy...");
+      const reductionFactor = Math.max(0.65, Math.sqrt(targetBytes / bestSize) * 0.96);
+      const correctiveScale = Math.max(0.15, ((lowS + highS) / 2) * reductionFactor);
+      const correctiveQuality = Math.max(0.08, ((lowQ + highQ) / 2) * reductionFactor);
+      const correctedBytes = await renderPdfWithParams(correctiveScale, correctiveQuality);
+      if (correctedBytes.byteLength <= targetBytes) {
+        bestBuffer = correctedBytes;
+        bestSize = correctedBytes.byteLength;
+      }
+    }
 
-      file.arrayBuffer().then((arrayBuffer) => {
-        worker.postMessage({
-          fileBuffer: arrayBuffer,
-          targetKB: Number(targetKB),
-          strictCeiling: Boolean(strictCeiling)
-        }, [arrayBuffer]);
-      }).catch(reject);
-    });
+    if (!bestBuffer) {
+      onProgress(95, "Applying maximum compression...");
+      bestBuffer = await renderPdfWithParams(0.18, 0.10);
+      bestSize = bestBuffer.byteLength;
+    }
+
+    const finalBlob = new Blob([bestBuffer], { type: 'application/pdf' });
+    const finalSizeKB = Math.round(finalBlob.size / 1024);
+    const originalSizeKB = Math.round(originalBytes / 1024);
+    const reductionPercent = Math.max(0, Math.round(((originalBytes - bestSize) / originalBytes) * 100));
+
+    onProgress(100, `Complete! Final Size: ${finalSizeKB} KB (${reductionPercent}% reduction)`);
+    return {
+      blob: finalBlob,
+      blobUrl: URL.createObjectURL(finalBlob),
+      fileName: `resized-${targetKB}kb-${file.name}`,
+      finalSizeKB,
+      originalSizeKB,
+      targetKB,
+      reductionPercent,
+      numPages
+    };
   },
 
   async cropPdf(file, marginPercent = 10, onProgress = () => {}) {
