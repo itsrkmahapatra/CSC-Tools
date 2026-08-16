@@ -975,6 +975,78 @@ button {
   color: var(--primary);
 }
 
+/* ==========================================================================
+   Visual Crop Overlay & Interactive Bounding Box
+   ========================================================================== */
+
+.crop-canvas-wrapper {
+  position: relative;
+  max-width: 650px;
+  width: 100%;
+  background: white;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  user-select: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: auto;
+}
+
+.crop-page-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  pointer-events: none;
+}
+
+.crop-bounding-overlay {
+  position: absolute;
+  inset: 0;
+  cursor: crosshair;
+}
+
+.crop-bounding-box {
+  position: absolute;
+  border: 2px dashed #e11d48;
+  background: rgba(225, 29, 72, 0.12);
+  cursor: move;
+  box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.45);
+}
+
+.crop-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: white;
+  border: 2px solid #e11d48;
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+}
+
+.crop-handle.handle-nw { top: -6px; left: -6px; cursor: nwse-resize; }
+.crop-handle.handle-n  { top: -6px; left: calc(50% - 6px); cursor: ns-resize; }
+.crop-handle.handle-ne { top: -6px; right: -6px; cursor: nesw-resize; }
+.crop-handle.handle-e  { top: calc(50% - 6px); right: -6px; cursor: ew-resize; }
+.crop-handle.handle-se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+.crop-handle.handle-s  { bottom: -6px; left: calc(50% - 6px); cursor: ns-resize; }
+.crop-handle.handle-sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
+.crop-handle.handle-w  { top: calc(50% - 6px); left: -6px; cursor: ew-resize; }
+
+.crop-coords-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: rgba(15, 23, 42, 0.85);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
 /* Toast Notifications */
 .toast-container {
   position: fixed;

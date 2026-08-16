@@ -328,21 +328,31 @@ const PdfTools = {
     };
   },
 
-  async cropPdf(file, marginPercent = 10, onProgress = () => {}) {
-    onProgress(20, "Adjusting crop boxes...");
+  async cropPdf(file, cropBox = { left: 10, top: 10, width: 80, height: 80 }, targetPageIndex = null, onProgress = () => {}) {
+    onProgress(20, "Applying custom bounding box crop...");
     const fileBytes = await file.arrayBuffer();
     const pdf = await PDFLib.PDFDocument.load(fileBytes);
     const pages = pdf.getPages();
 
-    pages.forEach((page) => {
-      const { x, y, width, height } = page.getMediaBox();
-      const marginX = (width * (marginPercent / 100)) / 2;
-      const marginY = (height * (marginPercent / 100)) / 2;
-      page.setCropBox(x + marginX, y + marginY, width - (marginX * 2), height - (marginY * 2));
+    const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
+    const leftPct = clamp(cropBox.left || 0, 0, 95) / 100;
+    const topPct = clamp(cropBox.top || 0, 0, 95) / 100;
+    const widthPct = clamp(cropBox.width || 100, 5, 100) / 100;
+    const heightPct = clamp(cropBox.height || 100, 5, 100) / 100;
+
+    pages.forEach((page, idx) => {
+      if (targetPageIndex === null || targetPageIndex === idx) {
+        const { x, y, width, height } = page.getMediaBox();
+        const cropX = x + (width * leftPct);
+        const cropY = y + (height * (1 - topPct - heightPct));
+        const cropW = width * widthPct;
+        const cropH = height * heightPct;
+        page.setCropBox(cropX, cropY, cropW, cropH);
+      }
     });
 
-    onProgress(90, "Saving cropped PDF...");
-    const pdfBytes = await pdf.save();
+    onProgress(90, "Saving cropped PDF document...");
+    const pdfBytes = await pdf.save({ useObjectStreams: true });
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     return {
       blob,
@@ -825,11 +835,16 @@ class DocuvateApp {
     this.activeStudio = null; // 'pdf' | 'image'
     this.selectedFiles = [];
     this.pages = []; // PDF page items
-    this.activeModule = 'organize'; // Studio sub-module
+    this.activeModule = 'compress'; // Studio sub-module
     this.viewMode = 'grid'; // 'grid' | 'list'
     this.isProcessing = false;
     this.resultData = null;
     this.draggedPageId = null;
+
+    // Visual PDF Crop state
+    this.activeCropPageIndex = 0;
+    this.cropBox = { left: 10, top: 10, width: 80, height: 80 }; // percentages
+    this.cropApplyAll = true;
 
     this.initElements();
     this.initEvents();
@@ -877,13 +892,15 @@ class DocuvateApp {
     });
   }
 
-  openPdfStudio() {
+  openPdfStudio(initialModule = 'compress') {
     this.activeStudio = 'pdf';
-    this.activeModule = 'compress';
+    this.activeModule = initialModule;
     this.selectedFiles = [];
     this.pages = [];
     this.resultData = null;
     this.isProcessing = false;
+    this.activeCropPageIndex = 0;
+    this.cropBox = { left: 10, top: 10, width: 80, height: 80 };
 
     this.workspaceTitle.textContent = "Master PDF Studio (All-in-One)";
     if (this.workspaceStatusIndicator) this.workspaceStatusIndicator.style.background = "#e11d48";
@@ -892,9 +909,9 @@ class DocuvateApp {
     this.renderWorkspace();
   }
 
-  openImageStudio() {
+  openImageStudio(initialModule = 'compress') {
     this.activeStudio = 'image';
-    this.activeModule = 'compress';
+    this.activeModule = initialModule;
     this.selectedFiles = [];
     this.pages = [];
     this.resultData = null;
@@ -928,7 +945,6 @@ class DocuvateApp {
         console.warn("Could not unpack PDF pages:", e);
       }
     } else {
-      // Image studio items
       newFiles.forEach((file, idx) => {
         this.pages.push({
           id: `img_${Date.now()}_${idx}`,
@@ -1009,11 +1025,14 @@ class DocuvateApp {
       <!-- Studio Module Navigation Tabs -->
       <div class="universal-module-nav">
         ${isPdf ? `
-          <button class="universal-module-tab ${this.activeModule === 'organize' ? 'active' : ''}" data-mod="organize">
-            <i data-lucide="layers" style="width:12px; height:12px;"></i> Organize
-          </button>
           <button class="universal-module-tab ${this.activeModule === 'compress' ? 'active' : ''}" data-mod="compress">
             <i data-lucide="file-heart" style="width:12px; height:12px;"></i> Compress (KB)
+          </button>
+          <button class="universal-module-tab ${this.activeModule === 'crop' ? 'active' : ''}" data-mod="crop">
+            <i data-lucide="crop" style="width:12px; height:12px;"></i> Crop Box
+          </button>
+          <button class="universal-module-tab ${this.activeModule === 'organize' ? 'active' : ''}" data-mod="organize">
+            <i data-lucide="layers" style="width:12px; height:12px;"></i> Organize
           </button>
           <button class="universal-module-tab ${this.activeModule === 'sign' ? 'active' : ''}" data-mod="sign">
             <i data-lucide="file-signature" style="width:12px; height:12px;"></i> Sign
@@ -1082,6 +1101,7 @@ class DocuvateApp {
           <i data-lucide="play" style="width: 18px; height: 18px; fill: currentColor;"></i>
           <span>${
             this.activeModule === 'compress' ? 'Compress Document (to Target KB)' :
+            this.activeModule === 'crop' ? 'Apply & Crop PDF Document' :
             this.activeModule === 'organize' ? 'Save & Organize Document' :
             this.activeModule === 'sign' ? 'Apply Signature Stamp' :
             this.activeModule === 'watermark' ? 'Apply Watermark' :
@@ -1140,6 +1160,53 @@ class DocuvateApp {
 
     const isPdf = this.activeStudio === 'pdf';
 
+    // Interactive Crop Canvas Mode
+    if (this.activeModule === 'crop' && isPdf && this.pages.length > 0) {
+      const activePage = this.pages[this.activeCropPageIndex] || this.pages[0];
+      const { left, top, width, height } = this.cropBox;
+
+      return `
+        <!-- Crop Page Navigation Bar -->
+        <div style="width:100%; max-width:650px; margin-bottom:0.75rem; display:flex; justify-content:space-between; align-items:center; background:white; padding:0.5rem 1rem; border-radius:12px; border:1px solid #e2e8f0; box-shadow:var(--shadow-sm);">
+          <button id="cropPrevPageBtn" style="font-size:0.75rem; font-weight:800; color:#334155; background:#f1f5f9; padding:0.35rem 0.75rem; border-radius:6px; display:flex; align-items:center; gap:0.25rem;" ${this.activeCropPageIndex === 0 ? 'disabled style="opacity:0.4;"' : ''}>
+            <i data-lucide="chevron-left" style="width:14px; height:14px;"></i> Previous
+          </button>
+          
+          <span style="font-size:0.85rem; font-weight:900; color:#e11d48;">
+            Page ${this.activeCropPageIndex + 1} of ${this.pages.length} (${activePage.fileName})
+          </span>
+
+          <button id="cropNextPageBtn" style="font-size:0.75rem; font-weight:800; color:#334155; background:#f1f5f9; padding:0.35rem 0.75rem; border-radius:6px; display:flex; align-items:center; gap:0.25rem;" ${this.activeCropPageIndex === this.pages.length - 1 ? 'disabled style="opacity:0.4;"' : ''}>
+            Next <i data-lucide="chevron-right" style="width:14px; height:14px;"></i>
+          </button>
+        </div>
+
+        <!-- Interactive Crop Viewport -->
+        <div class="crop-canvas-wrapper" id="cropCanvasWrapper">
+          <img src="${activePage.preview}" alt="Page Crop Preview" class="crop-page-img" id="cropPageImg" />
+          
+          <div class="crop-bounding-overlay" id="cropOverlay">
+            <div class="crop-bounding-box" id="cropBoundingBox" style="left: ${left}%; top: ${top}%; width: ${width}%; height: ${height}%;">
+              <div class="crop-coords-badge" id="cropCoordsBadge">${Math.round(width)}% × ${Math.round(height)}%</div>
+              <div class="crop-handle handle-nw" data-handle="nw"></div>
+              <div class="crop-handle handle-n" data-handle="n"></div>
+              <div class="crop-handle handle-ne" data-handle="ne"></div>
+              <div class="crop-handle handle-e" data-handle="e"></div>
+              <div class="crop-handle handle-se" data-handle="se"></div>
+              <div class="crop-handle handle-s" data-handle="s"></div>
+              <div class="crop-handle handle-sw" data-handle="sw"></div>
+              <div class="crop-handle handle-w" data-handle="w"></div>
+            </div>
+          </div>
+        </div>
+
+        <p style="font-size:0.75rem; color:#64748b; margin-top:0.75rem; text-align:center;">
+          <i data-lucide="info" style="width:12px; height:12px; display:inline;"></i> Drag inside box to move. Drag handles to resize, or drag on the page to draw a new crop box.
+        </p>
+      `;
+    }
+
+    // Standard Grid / List View
     return `
       <!-- Toolbar -->
       <div style="width:100%; max-width:1000px; margin-bottom:1rem; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:0.5rem; background:white; padding:0.65rem 1rem; border-radius:12px; border:1px solid #e2e8f0; box-shadow:var(--shadow-sm);">
@@ -1257,6 +1324,57 @@ class DocuvateApp {
           </label>
         </div>
       `;
+    } else if (mod === 'crop' && isPdf) {
+      const { left, top, width, height } = this.cropBox;
+      const right = Math.round(100 - left - width);
+      const bottom = Math.round(100 - top - height);
+
+      html = `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:#64748b;">Manual Crop Box</span>
+          <span style="font-size:0.65rem; font-weight:800; background:#fef2f2; color:#ef4444; padding:0.15rem 0.4rem; border-radius:4px;">Drag to Select</span>
+        </div>
+
+        <div>
+          <label style="font-size:0.75rem; font-weight:700; color:#475569; display:block; margin-bottom:0.35rem;">Quick Presets</label>
+          <div class="preset-grid" style="grid-template-columns: repeat(2, 1fr);">
+            <button class="preset-btn" data-crop-preset="full">Full Page (Reset)</button>
+            <button class="preset-btn active" data-crop-preset="default">Center 80%</button>
+            <button class="preset-btn" data-crop-preset="header-footer">Trim Headers (12%)</button>
+            <button class="preset-btn" data-crop-preset="borders">Trim Margins (8%)</button>
+          </div>
+        </div>
+
+        <div style="background:#f8fafc; padding:0.75rem; border-radius:8px; border:1px solid #e2e8f0;">
+          <label style="font-size:0.75rem; font-weight:800; color:#334155; display:block; margin-bottom:0.5rem; text-transform:uppercase;">Bounding Coordinates (%)</label>
+          
+          <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:0.5rem;">
+            <div>
+              <span style="font-size:0.7rem; font-weight:700; color:#64748b;">Top Margin</span>
+              <input type="number" id="cropInpTop" min="0" max="90" value="${Math.round(top)}" style="width:100%; padding:0.35rem; border:1px solid #cbd5e1; border-radius:6px; font-weight:800; text-align:center;" />
+            </div>
+            <div>
+              <span style="font-size:0.7rem; font-weight:700; color:#64748b;">Bottom Margin</span>
+              <input type="number" id="cropInpBottom" min="0" max="90" value="${bottom}" style="width:100%; padding:0.35rem; border:1px solid #cbd5e1; border-radius:6px; font-weight:800; text-align:center;" />
+            </div>
+            <div>
+              <span style="font-size:0.7rem; font-weight:700; color:#64748b;">Left Margin</span>
+              <input type="number" id="cropInpLeft" min="0" max="90" value="${Math.round(left)}" style="width:100%; padding:0.35rem; border:1px solid #cbd5e1; border-radius:6px; font-weight:800; text-align:center;" />
+            </div>
+            <div>
+              <span style="font-size:0.7rem; font-weight:700; color:#64748b;">Right Margin</span>
+              <input type="number" id="cropInpRight" min="0" max="90" value="${right}" style="width:100%; padding:0.35rem; border:1px solid #cbd5e1; border-radius:6px; font-weight:800; text-align:center;" />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.75rem; font-weight:700; color:#334155; cursor:pointer;">
+            <input type="checkbox" id="cropApplyAllCheck" ${this.cropApplyAll ? 'checked' : ''} style="accent-color:#e11d48;" />
+            <span>Apply this crop to all pages in document</span>
+          </label>
+        </div>
+      `;
     } else if (mod === 'sign' && isPdf) {
       html = `
         <label style="font-size:0.75rem; font-weight:700; color:#475569;">Draw Signature on Pad</label>
@@ -1339,14 +1457,7 @@ class DocuvateApp {
             <button class="preset-btn active" data-export-mode="merge">Save / Merge All</button>
             <button class="preset-btn" data-export-mode="split">Split Individual (ZIP)</button>
             <button class="preset-btn" data-export-mode="extract">Extract Selected</button>
-            <button class="preset-btn" data-export-mode="crop">Crop Margins</button>
           </div>
-        </div>
-
-        <div id="cropMarginControls" style="display:none; background:#f8fafc; padding:0.65rem; border-radius:8px; border:1px solid #e2e8f0;">
-          <label style="font-size:0.75rem; font-weight:700; color:#475569; display:block;">Crop Margins (%)</label>
-          <input type="range" id="cropMarginSlider" min="2" max="40" value="10" style="width:100%; margin-top:0.35rem; accent-color:#e11d48;" />
-          <span id="cropMarginVal" style="font-size:0.75rem; font-weight:800; color:#e11d48; display:block; text-align:right;">10% Margin</span>
         </div>
       `;
     }
@@ -1389,25 +1500,156 @@ class DocuvateApp {
       targetSlider.addEventListener('input', () => { targetInput.value = targetSlider.value; });
     }
 
-    // Export mode buttons
-    const exportBtns = sidebarArea.querySelectorAll('.preset-btn[data-export-mode]');
-    const cropMarginControls = sidebarArea.querySelector('#cropMarginControls');
-    const cropMarginSlider = sidebarArea.querySelector('#cropMarginSlider');
-    const cropMarginVal = sidebarArea.querySelector('#cropMarginVal');
-    exportBtns.forEach(btn => {
+    // Crop presets & manual input bindings
+    sidebarArea.querySelectorAll('.preset-btn[data-crop-preset]').forEach(btn => {
       btn.addEventListener('click', () => {
-        exportBtns.forEach(b => b.classList.remove('active'));
+        sidebarArea.querySelectorAll('.preset-btn[data-crop-preset]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        const mode = btn.dataset.exportMode;
-        if (cropMarginControls) cropMarginControls.style.display = mode === 'crop' ? 'block' : 'none';
+        const p = btn.dataset.cropPreset;
+        if (p === 'full') this.cropBox = { left: 0, top: 0, width: 100, height: 100 };
+        else if (p === 'header-footer') this.cropBox = { left: 5, top: 12, width: 90, height: 76 };
+        else if (p === 'borders') this.cropBox = { left: 8, top: 8, width: 84, height: 84 };
+        else this.cropBox = { left: 10, top: 10, width: 80, height: 80 };
+        this.renderWorkspace();
       });
     });
-    if (cropMarginSlider && cropMarginVal) {
-      cropMarginSlider.addEventListener('input', () => { cropMarginVal.textContent = `${cropMarginSlider.value}% Margin`; });
+
+    const cropInpTop = sidebarArea.querySelector('#cropInpTop');
+    const cropInpBottom = sidebarArea.querySelector('#cropInpBottom');
+    const cropInpLeft = sidebarArea.querySelector('#cropInpLeft');
+    const cropInpRight = sidebarArea.querySelector('#cropInpRight');
+    const cropApplyAllCheck = sidebarArea.querySelector('#cropApplyAllCheck');
+
+    if (cropApplyAllCheck) {
+      cropApplyAllCheck.addEventListener('change', (e) => { this.cropApplyAll = e.target.checked; });
+    }
+
+    const updateCropFromInputs = () => {
+      const top = Math.max(0, Math.min(85, parseFloat(cropInpTop?.value || 0)));
+      const bottom = Math.max(0, Math.min(85, parseFloat(cropInpBottom?.value || 0)));
+      const left = Math.max(0, Math.min(85, parseFloat(cropInpLeft?.value || 0)));
+      const right = Math.max(0, Math.min(85, parseFloat(cropInpRight?.value || 0)));
+      const width = Math.max(5, 100 - left - right);
+      const height = Math.max(5, 100 - top - bottom);
+      this.cropBox = { left, top, width, height };
+
+      const box = canvasArea.querySelector('#cropBoundingBox');
+      const badge = canvasArea.querySelector('#cropCoordsBadge');
+      if (box) {
+        box.style.left = `${left}%`; box.style.top = `${top}%`;
+        box.style.width = `${width}%`; box.style.height = `${height}%`;
+      }
+      if (badge) badge.textContent = `${Math.round(width)}% × ${Math.round(height)}%`;
+    };
+
+    [cropInpTop, cropInpBottom, cropInpLeft, cropInpRight].forEach(inp => {
+      inp?.addEventListener('input', updateCropFromInputs);
+    });
+
+    // Crop Page Navigation buttons
+    canvasArea.querySelector('#cropPrevPageBtn')?.addEventListener('click', () => {
+      if (this.activeCropPageIndex > 0) {
+        this.activeCropPageIndex--;
+        this.renderWorkspace();
+      }
+    });
+    canvasArea.querySelector('#cropNextPageBtn')?.addEventListener('click', () => {
+      if (this.activeCropPageIndex < this.pages.length - 1) {
+        this.activeCropPageIndex++;
+        this.renderWorkspace();
+      }
+    });
+
+    // Interactive Drag & Resize on Visual Crop Box Overlay
+    const overlay = canvasArea.querySelector('#cropOverlay');
+    const boundingBox = canvasArea.querySelector('#cropBoundingBox');
+    if (overlay && boundingBox) {
+      let isDragging = false;
+      let isResizing = false;
+      let activeHandle = null;
+      let startX = 0, startY = 0;
+      let startLeft = this.cropBox.left, startTop = this.cropBox.top;
+      let startW = this.cropBox.width, startH = this.cropBox.height;
+
+      const getOverlayPct = (e) => {
+        const rect = overlay.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const xPct = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
+        const yPct = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100));
+        return { xPct, yPct };
+      };
+
+      boundingBox.addEventListener('mousedown', (e) => {
+        const handle = e.target.closest('.crop-handle');
+        if (handle) {
+          isResizing = true;
+          activeHandle = handle.dataset.handle;
+        } else {
+          isDragging = true;
+        }
+        const { xPct, yPct } = getOverlayPct(e);
+        startX = xPct; startY = yPct;
+        startLeft = this.cropBox.left; startTop = this.cropBox.top;
+        startW = this.cropBox.width; startH = this.cropBox.height;
+        e.stopPropagation();
+        e.preventDefault();
+      });
+
+      overlay.addEventListener('mousedown', (e) => {
+        if (e.target.closest('#cropBoundingBox')) return;
+        const { xPct, yPct } = getOverlayPct(e);
+        this.cropBox = { left: xPct, top: yPct, width: 5, height: 5 };
+        isResizing = true;
+        activeHandle = 'se';
+        startX = xPct; startY = yPct;
+        startLeft = xPct; startTop = yPct;
+        startW = 5; startH = 5;
+        this.updateCropBoxVisual(canvasArea, sidebarArea);
+      });
+
+      const onMove = (e) => {
+        if (!isDragging && !isResizing) return;
+        const { xPct, yPct } = getOverlayPct(e);
+        const dx = xPct - startX;
+        const dy = yPct - startY;
+
+        if (isDragging) {
+          const newLeft = Math.max(0, Math.min(100 - startW, startLeft + dx));
+          const newTop = Math.max(0, Math.min(100 - startH, startTop + dy));
+          this.cropBox.left = newLeft;
+          this.cropBox.top = newTop;
+        } else if (isResizing) {
+          let l = startLeft, t = startTop, w = startW, h = startH;
+          if (activeHandle.includes('e')) w = Math.max(5, Math.min(100 - l, startW + dx));
+          if (activeHandle.includes('s')) h = Math.max(5, Math.min(100 - t, startH + dy));
+          if (activeHandle.includes('w')) {
+            const rawL = startLeft + dx;
+            const newL = Math.max(0, Math.min(startLeft + startW - 5, rawL));
+            w = startW + (startLeft - newL);
+            l = newL;
+          }
+          if (activeHandle.includes('n')) {
+            const rawT = startTop + dy;
+            const newT = Math.max(0, Math.min(startTop + startH - 5, rawT));
+            h = startH + (startTop - newT);
+            t = newT;
+          }
+          this.cropBox = { left: l, top: t, width: w, height: h };
+        }
+
+        this.updateCropBoxVisual(canvasArea, sidebarArea);
+      };
+
+      const onEnd = () => { isDragging = false; isResizing = false; activeHandle = null; };
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onEnd);
+      window.addEventListener('touchmove', onMove, { passive: false });
+      window.addEventListener('touchend', onEnd);
     }
 
     // Preset attributes
-    ['data-pos', 'data-conv', 'data-img-fmt', 'data-exam'].forEach(attr => {
+    ['data-pos', 'data-conv', 'data-img-fmt', 'data-exam', 'data-export-mode'].forEach(attr => {
       const btns = sidebarArea.querySelectorAll(`.preset-btn[${attr}]`);
       btns.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1544,6 +1786,28 @@ class DocuvateApp {
     processBtn?.addEventListener('click', () => this.executeAction(sidebarArea));
   }
 
+  updateCropBoxVisual(canvasArea, sidebarArea) {
+    const box = canvasArea.querySelector('#cropBoundingBox');
+    const badge = canvasArea.querySelector('#cropCoordsBadge');
+    const { left, top, width, height } = this.cropBox;
+
+    if (box) {
+      box.style.left = `${left}%`; box.style.top = `${top}%`;
+      box.style.width = `${width}%`; box.style.height = `${height}%`;
+    }
+    if (badge) badge.textContent = `${Math.round(width)}% × ${Math.round(height)}%`;
+
+    const cropInpTop = sidebarArea.querySelector('#cropInpTop');
+    const cropInpBottom = sidebarArea.querySelector('#cropInpBottom');
+    const cropInpLeft = sidebarArea.querySelector('#cropInpLeft');
+    const cropInpRight = sidebarArea.querySelector('#cropInpRight');
+
+    if (cropInpTop) cropInpTop.value = Math.round(top);
+    if (cropInpBottom) cropInpBottom.value = Math.round(100 - top - height);
+    if (cropInpLeft) cropInpLeft.value = Math.round(left);
+    if (cropInpRight) cropInpRight.value = Math.round(100 - left - width);
+  }
+
   async executeAction(sidebarArea) {
     if (this.isProcessing || this.pages.length === 0) return;
     this.isProcessing = true;
@@ -1577,6 +1841,8 @@ class DocuvateApp {
           const targetKB = sidebarArea.querySelector('#targetKbInput')?.value || 200;
           const strictCeiling = sidebarArea.querySelector('#strictCeilingCheck')?.checked ?? true;
           result = await PdfTools.compressPdf(compiledFile, targetKB, strictCeiling, onProgress);
+        } else if (mod === 'crop') {
+          result = await PdfTools.cropPdf(compiledFile, this.cropBox, this.cropApplyAll ? null : this.activeCropPageIndex, onProgress);
         } else if (mod === 'sign') {
           const sigCanvas = sidebarArea.querySelector('#sigCanvas');
           const sigData = sigCanvas ? sigCanvas.toDataURL('image/png') : '';
@@ -1600,10 +1866,7 @@ class DocuvateApp {
         } else {
           // organize
           const exportMode = sidebarArea.querySelector('.preset-btn[data-export-mode].active')?.dataset?.exportMode || 'merge';
-          if (exportMode === 'crop') {
-            const cropMargin = parseInt(sidebarArea.querySelector('#cropMarginSlider')?.value || 10);
-            result = await PdfTools.cropPdf(compiledFile, cropMargin, onProgress);
-          } else if (exportMode === 'split' && window.JSZip) {
+          if (exportMode === 'split' && window.JSZip) {
             onProgress(20, "Generating split bundle...");
             const zip = new JSZip();
             const selectedPages = this.pages.filter(p => p.selected);
@@ -1691,3 +1954,4 @@ class DocuvateApp {
 window.addEventListener('DOMContentLoaded', () => {
   window.docuvateApp = new DocuvateApp();
 });
+
