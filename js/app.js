@@ -1,6 +1,6 @@
 /**
  * Docuvate Master Application Controller & Client-Side Engines
- * Universal All-in-One PDF Workstation - Perform multiple operations without re-uploading!
+ * Master PDF Studio & Master Image Studio Only (All-In-One Workstations)
  */
 
 // -------------------------------------------------------------
@@ -334,34 +334,6 @@ const PdfTools = {
     };
   },
 
-  async redactPdf(file, onProgress = () => {}) {
-    onProgress(20, "Sanitizing confidential layers...");
-    const fileBytes = await file.arrayBuffer();
-    const pdf = await PDFLib.PDFDocument.load(fileBytes);
-    const pages = pdf.getPages();
-
-    pages.forEach((page) => {
-      const { width, height } = page.getSize();
-      page.drawRectangle({
-        x: 50,
-        y: height - 100,
-        width: width - 100,
-        height: 25,
-        color: PDFLib.rgb(0, 0, 0),
-      });
-    });
-
-    onProgress(90, "Saving redacted document...");
-    const pdfBytes = await pdf.save();
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    return {
-      blob,
-      blobUrl: URL.createObjectURL(blob),
-      fileName: `redacted-${file.name}`,
-      sizeKB: Math.round(blob.size / 1024)
-    };
-  },
-
   async pdfToJpg(file, scale = 2.0, onProgress = () => {}) {
     onProgress(15, "Rasterizing PDF pages...");
     const arrayBuffer = await file.arrayBuffer();
@@ -443,7 +415,7 @@ const ImageTools = {
   },
 
   async compressImage(file, targetKB = 100, onProgress = () => {}) {
-    onProgress(15, "Loading image...");
+    onProgress(15, "Loading image bitmap...");
     const img = await this.loadImage(file);
     const canvas = document.createElement('canvas');
     canvas.width = img.naturalWidth;
@@ -577,89 +549,6 @@ const ImageTools = {
     };
   },
 
-  async photoUpscale(file, scaleFactor = 2, onProgress = () => {}) {
-    onProgress(20, "Applying super-resolution scaling...");
-    const img = await this.loadImage(file);
-    const canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth * scaleFactor;
-    canvas.height = img.naturalHeight * scaleFactor;
-    const ctx = canvas.getContext('2d');
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-    const blob = await new Promise(r => canvas.toBlob(r, 'image/png', 0.95));
-    return {
-      blob,
-      blobUrl: URL.createObjectURL(blob),
-      fileName: `upscaled-${scaleFactor}x-${file.name}`,
-      sizeKB: Math.round(blob.size / 1024)
-    };
-  },
-
-  async removeBackground(file, onProgress = () => {}) {
-    onProgress(20, "Extracting transparency mask...");
-    const img = await this.loadImage(file);
-    const canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0);
-
-    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imgData.data;
-    const bgR = data[0], bgG = data[1], bgB = data[2];
-
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i], g = data[i+1], b = data[i+2];
-      const diff = Math.sqrt((r - bgR)**2 + (g - bgG)**2 + (b - bgB)**2);
-      if (diff < 35) data[i + 3] = 0;
-    }
-
-    ctx.putImageData(imgData, 0, 0);
-    const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
-    return {
-      blob,
-      blobUrl: URL.createObjectURL(blob),
-      fileName: `transparent-${file.name.replace(/\.[^/.]+$/, "")}.png`,
-      sizeKB: Math.round(blob.size / 1024)
-    };
-  },
-
-  async generateMeme(file, topText = 'TOP TEXT', bottomText = 'BOTTOM TEXT', onProgress = () => {}) {
-    onProgress(20, "Rendering meme...");
-    const img = await this.loadImage(file);
-    const canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0);
-
-    const fontSize = Math.max(20, Math.round(canvas.width / 12));
-    ctx.font = `900 ${fontSize}px Impact, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.fillStyle = 'white';
-    ctx.strokeStyle = 'black';
-    ctx.lineWidth = Math.max(2, fontSize / 8);
-
-    if (topText) {
-      ctx.strokeText(topText.toUpperCase(), canvas.width / 2, fontSize + 20);
-      ctx.fillText(topText.toUpperCase(), canvas.width / 2, fontSize + 20);
-    }
-    if (bottomText) {
-      ctx.strokeText(bottomText.toUpperCase(), canvas.width / 2, canvas.height - 30);
-      ctx.fillText(bottomText.toUpperCase(), canvas.width / 2, canvas.height - 30);
-    }
-
-    const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.9));
-    return {
-      blob,
-      blobUrl: URL.createObjectURL(blob),
-      fileName: `meme-${file.name}`,
-      sizeKB: Math.round(blob.size / 1024)
-    };
-  },
-
   async editPhoto(file, brightness = 100, contrast = 100, grayscale = 0, sepia = 0, onProgress = () => {}) {
     onProgress(20, "Applying adjustments...");
     const img = await this.loadImage(file);
@@ -745,7 +634,6 @@ const ImageTools = {
       blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', quality));
     }
 
-    onProgress(100, "Done!");
     return {
       blob,
       blobUrl: URL.createObjectURL(blob),
@@ -756,16 +644,14 @@ const ImageTools = {
 };
 
 // -------------------------------------------------------------
-// App Controller - Universal PDF Workstation
+// App Controller - 2 Master Studios
 // -------------------------------------------------------------
 class DocuvateApp {
   constructor() {
-    this.currentCategory = 'all';
-    this.searchQuery = '';
-    this.activeTool = null;
+    this.activeStudio = null; // 'pdf' | 'image'
     this.selectedFiles = [];
-    this.pages = []; // Unified page list
-    this.activePdfModule = 'organize'; // 'organize' | 'compress' | 'sign' | 'watermark' | 'numbers' | 'security' | 'convert' | 'repair'
+    this.pages = []; // PDF page items
+    this.activeModule = 'organize'; // Studio sub-module
     this.viewMode = 'grid'; // 'grid' | 'list'
     this.isProcessing = false;
     this.resultData = null;
@@ -777,41 +663,33 @@ class DocuvateApp {
   }
 
   initElements() {
-    this.toolsContainer = document.getElementById('toolsContainer');
-    this.searchInput = document.getElementById('searchInput');
-    this.categoryTabs = document.getElementById('categoryTabs');
     this.workspaceOverlay = document.getElementById('workspaceOverlay');
     this.workspaceTitle = document.getElementById('workspaceTitle');
     this.workspaceBody = document.getElementById('workspaceBody');
     this.workspaceCloseBtn = document.getElementById('workspaceCloseBtn');
+    this.workspaceStatusIndicator = document.getElementById('workspaceStatusIndicator');
     this.toastContainer = document.getElementById('toastContainer');
   }
 
   initEvents() {
-    this.searchInput?.addEventListener('input', (e) => {
-      this.searchQuery = e.target.value.toLowerCase().trim();
-      this.filterVisibleTools();
+    // Launch PDF Studio buttons
+    document.getElementById('btnLaunchPdfStudio')?.addEventListener('click', () => this.openPdfStudio());
+    document.getElementById('cardPdfStudio')?.addEventListener('click', (e) => {
+      if (!e.target.closest('#btnLaunchPdfStudio')) this.openPdfStudio();
+    });
+    document.getElementById('navPdfStudio')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.openPdfStudio();
     });
 
-    this.categoryTabs?.addEventListener('click', (e) => {
-      const btn = e.target.closest('.category-tab');
-      if (!btn) return;
-      document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
-      btn.classList.add('active');
-      this.currentCategory = btn.dataset.category;
-      this.filterVisibleTools();
+    // Launch Image Studio buttons
+    document.getElementById('btnLaunchImageStudio')?.addEventListener('click', () => this.openImageStudio());
+    document.getElementById('cardImageStudio')?.addEventListener('click', (e) => {
+      if (!e.target.closest('#btnLaunchImageStudio')) this.openImageStudio();
     });
-
-    this.toolsContainer?.addEventListener('click', (e) => {
-      const card = e.target.closest('.tool-card');
-      if (!card) return;
-      const toolId = card.dataset.id;
-      this.openToolById(toolId);
-    });
-
-    // Launch Master PDF Studio button
-    document.getElementById('launchMasterStudioBtn')?.addEventListener('click', () => {
-      this.openMasterPdfStudio();
+    document.getElementById('navImageStudio')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.openImageStudio();
     });
 
     this.workspaceCloseBtn?.addEventListener('click', () => this.closeWorkspace());
@@ -825,71 +703,31 @@ class DocuvateApp {
     });
   }
 
-  filterVisibleTools() {
-    const blocks = document.querySelectorAll('.category-block');
-    blocks.forEach(block => {
-      const cat = block.dataset.category;
-      const matchCat = this.currentCategory === 'all' || this.currentCategory === cat;
-      const cards = block.querySelectorAll('.tool-card');
-      let visibleCardsInBlock = 0;
+  openPdfStudio() {
+    this.activeStudio = 'pdf';
+    this.activeModule = 'organize';
+    this.selectedFiles = [];
+    this.pages = [];
+    this.resultData = null;
+    this.isProcessing = false;
 
-      cards.forEach(card => {
-        const toolName = card.querySelector('.tool-name')?.textContent.toLowerCase() || '';
-        const toolDesc = card.querySelector('.tool-desc')?.textContent.toLowerCase() || '';
-        const matchSearch = !this.searchQuery || toolName.includes(this.searchQuery) || toolDesc.includes(this.searchQuery);
-
-        if (matchCat && matchSearch) {
-          card.style.display = 'flex';
-          visibleCardsInBlock++;
-        } else {
-          card.style.display = 'none';
-        }
-      });
-
-      block.style.display = matchCat && visibleCardsInBlock > 0 ? 'block' : 'none';
-    });
-
-    if (window.lucide) window.lucide.createIcons();
-  }
-
-  openMasterPdfStudio(initialModule = 'organize') {
-    this.activeTool = {
-      id: 'pdf-master-studio',
-      name: 'Master PDF Workstation (All-in-One)',
-      isPdfStudio: true,
-      accept: '.pdf',
-      multiple: true
-    };
-    this.activePdfModule = initialModule;
-    this.workspaceTitle.textContent = "Master PDF Workstation";
+    this.workspaceTitle.textContent = "Master PDF Studio (All-in-One)";
+    if (this.workspaceStatusIndicator) this.workspaceStatusIndicator.style.background = "#e11d48";
     this.workspaceOverlay.classList.add('active');
     document.body.style.overflow = 'hidden';
     this.renderWorkspace();
   }
 
-  openToolById(toolId) {
-    // If it is any of the PDF tools, route seamlessly to the Master PDF Workstation with the appropriate active module!
-    if (toolId.startsWith('pdf-') || toolId === 'convert-jpg-to-pdf' || toolId === 'convert-pdf-to-jpg' || toolId === 'convert-pdf-to-pdfa' || toolId === 'convert-ocr-pdf') {
-      let mod = 'organize';
-      if (toolId === 'pdf-compress') mod = 'compress';
-      else if (toolId === 'pdf-sign') mod = 'sign';
-      else if (toolId === 'pdf-watermark') mod = 'watermark';
-      else if (toolId === 'pdf-page-numbers') mod = 'numbers';
-      else if (toolId === 'pdf-protect' || toolId === 'pdf-unlock') mod = 'security';
-      else if (toolId === 'pdf-repair' || toolId === 'pdf-redact') mod = 'repair';
-      else if (toolId.startsWith('convert-')) mod = 'convert';
-      
-      this.openMasterPdfStudio(mod);
-      return;
-    }
-
-    // Image/AI tool
-    this.activeTool = { id: toolId, name: toolId.replace('-', ' ').toUpperCase(), isPdfStudio: false, accept: 'image/*', multiple: false };
+  openImageStudio() {
+    this.activeStudio = 'image';
+    this.activeModule = 'compress';
     this.selectedFiles = [];
     this.pages = [];
     this.resultData = null;
     this.isProcessing = false;
-    this.workspaceTitle.textContent = this.activeTool.name;
+
+    this.workspaceTitle.textContent = "Master Image Studio (All-in-One)";
+    if (this.workspaceStatusIndicator) this.workspaceStatusIndicator.style.background = "#0284c7";
     this.workspaceOverlay.classList.add('active');
     document.body.style.overflow = 'hidden';
     this.renderWorkspace();
@@ -899,7 +737,7 @@ class DocuvateApp {
     if (this.resultData?.blobUrl) URL.revokeObjectURL(this.resultData.blobUrl);
     this.workspaceOverlay.classList.remove('active');
     document.body.style.overflow = '';
-    this.activeTool = null;
+    this.activeStudio = null;
     this.selectedFiles = [];
     this.pages = [];
     this.resultData = null;
@@ -907,21 +745,23 @@ class DocuvateApp {
 
   async handleFilesAdded(newFiles) {
     this.selectedFiles.push(...newFiles);
-    
-    // Unpack all pages into the persistent page workspace
-    try {
-      const extractedPages = await PdfTools.extractAllPagesAsThumbnails(newFiles);
-      this.pages.push(...extractedPages);
-    } catch (err) {
-      console.warn("Could not unpack pages as thumbnails:", err);
+
+    if (this.activeStudio === 'pdf') {
+      try {
+        const extracted = await PdfTools.extractAllPagesAsThumbnails(newFiles);
+        this.pages.push(...extracted);
+      } catch (e) {
+        console.warn("Could not unpack PDF pages:", e);
+      }
+    } else {
+      // Image studio items
       newFiles.forEach((file, idx) => {
         this.pages.push({
-          id: `file_${Date.now()}_${idx}`,
+          id: `img_${Date.now()}_${idx}`,
           file,
           fileName: file.name,
-          originalIndex: 0,
-          pageNumber: 1,
-          preview: null,
+          preview: URL.createObjectURL(file),
+          pageNumber: idx + 1,
           rotation: 0,
           selected: true
         });
@@ -932,24 +772,26 @@ class DocuvateApp {
   }
 
   renderWorkspace() {
-    if (!this.activeTool || !this.workspaceBody) return;
+    if (!this.activeStudio || !this.workspaceBody) return;
     this.workspaceBody.innerHTML = '';
 
-    // If no files yet, render big drag & drop zone
+    const isPdf = this.activeStudio === 'pdf';
+
+    // Dropzone when empty
     if (this.pages.length === 0 && this.selectedFiles.length === 0) {
       const dropzoneContainer = document.createElement('div');
       dropzoneContainer.className = 'dropzone-container';
       dropzoneContainer.innerHTML = `
         <div class="dropzone-visual-box" id="mainDropBox">
-          <i data-lucide="upload-cloud" class="dropzone-icon-huge"></i>
-          <h3 class="dropzone-main-text">Drag & drop your ${this.activeTool.isPdfStudio ? 'PDF documents' : 'Images'} here</h3>
-          <label class="dropzone-select-btn">
+          <i data-lucide="${isPdf ? 'layers' : 'image'}" class="dropzone-icon-huge" style="color: ${isPdf ? '#e11d48' : '#0284c7'};"></i>
+          <h3 class="dropzone-main-text">Drag & drop your ${isPdf ? 'PDF documents' : 'Images'} here</h3>
+          <label class="dropzone-select-btn" style="background: ${isPdf ? 'var(--pdf-gradient)' : 'var(--image-gradient)'};">
             <i data-lucide="file-plus" style="width: 20px; height: 20px;"></i>
-            <span>Select ${this.activeTool.isPdfStudio ? 'PDF Files' : 'Files'}</span>
-            <input type="file" id="fileInput" accept="${this.activeTool.accept || '.pdf'}" multiple style="display:none;" />
+            <span>Select ${isPdf ? 'PDF Files' : 'Image Files'}</span>
+            <input type="file" id="fileInput" accept="${isPdf ? '.pdf' : 'image/*'}" multiple style="display:none;" />
           </label>
           <p style="font-size: 0.8125rem; color: #94a3b8; margin-top: 1.5rem;">
-            100% Client-Side Engine. No server uploads. Process, compress, sign, and organize in one place!
+            100% Client-Side Sandbox. All operations happen in this studio without re-uploading!
           </p>
         </div>
       `;
@@ -978,53 +820,72 @@ class DocuvateApp {
     const layout = document.createElement('div');
     layout.className = 'workspace-two-col';
 
-    // Left Canvas Area (Visual Thumbnail Grid)
+    // Canvas
     const canvasArea = document.createElement('div');
     canvasArea.className = 'workspace-canvas-area';
     canvasArea.innerHTML = this.renderCanvasContent();
     layout.appendChild(canvasArea);
 
-    // Right Sidebar Controls Area with Unified Module Navigation Tabs
+    // Sidebar
     const sidebarArea = document.createElement('div');
     sidebarArea.className = 'workspace-sidebar-area';
     const selCount = this.pages.filter(p => p.selected).length;
 
     sidebarArea.innerHTML = `
-      ${this.activeTool.isPdfStudio ? `
-        <!-- Universal Module Tabs -->
-        <div class="universal-module-nav">
-          <button class="universal-module-tab ${this.activePdfModule === 'organize' ? 'active' : ''}" data-mod="organize">
+      <!-- Studio Module Navigation Tabs -->
+      <div class="universal-module-nav">
+        ${isPdf ? `
+          <button class="universal-module-tab ${this.activeModule === 'organize' ? 'active' : ''}" data-mod="organize">
             <i data-lucide="layers" style="width:12px; height:12px;"></i> Organize
           </button>
-          <button class="universal-module-tab ${this.activePdfModule === 'compress' ? 'active' : ''}" data-mod="compress">
-            <i data-lucide="file-heart" style="width:12px; height:12px;"></i> Compress
+          <button class="universal-module-tab ${this.activeModule === 'compress' ? 'active' : ''}" data-mod="compress">
+            <i data-lucide="file-heart" style="width:12px; height:12px;"></i> Compress (KB)
           </button>
-          <button class="universal-module-tab ${this.activePdfModule === 'sign' ? 'active' : ''}" data-mod="sign">
+          <button class="universal-module-tab ${this.activeModule === 'sign' ? 'active' : ''}" data-mod="sign">
             <i data-lucide="file-signature" style="width:12px; height:12px;"></i> Sign
           </button>
-          <button class="universal-module-tab ${this.activePdfModule === 'watermark' ? 'active' : ''}" data-mod="watermark">
+          <button class="universal-module-tab ${this.activeModule === 'watermark' ? 'active' : ''}" data-mod="watermark">
             <i data-lucide="droplet" style="width:12px; height:12px;"></i> Watermark
           </button>
-          <button class="universal-module-tab ${this.activePdfModule === 'numbers' ? 'active' : ''}" data-mod="numbers">
+          <button class="universal-module-tab ${this.activeModule === 'numbers' ? 'active' : ''}" data-mod="numbers">
             <i data-lucide="hash" style="width:12px; height:12px;"></i> Numbering
           </button>
-          <button class="universal-module-tab ${this.activePdfModule === 'security' ? 'active' : ''}" data-mod="security">
+          <button class="universal-module-tab ${this.activeModule === 'security' ? 'active' : ''}" data-mod="security">
             <i data-lucide="lock" style="width:12px; height:12px;"></i> Security
           </button>
-          <button class="universal-module-tab ${this.activePdfModule === 'convert' ? 'active' : ''}" data-mod="convert">
+          <button class="universal-module-tab ${this.activeModule === 'convert' ? 'active' : ''}" data-mod="convert">
             <i data-lucide="image" style="width:12px; height:12px;"></i> Convert/OCR
           </button>
-          <button class="universal-module-tab ${this.activePdfModule === 'repair' ? 'active' : ''}" data-mod="repair">
+          <button class="universal-module-tab ${this.activeModule === 'repair' ? 'active' : ''}" data-mod="repair">
             <i data-lucide="wrench" style="width:12px; height:12px;"></i> Repair
           </button>
-        </div>
-      ` : ''}
+        ` : `
+          <button class="universal-module-tab ${this.activeModule === 'compress' ? 'active' : ''}" data-mod="compress">
+            <i data-lucide="expand" style="width:12px; height:12px;"></i> Compress (KB)
+          </button>
+          <button class="universal-module-tab ${this.activeModule === 'resize' ? 'active' : ''}" data-mod="resize">
+            <i data-lucide="maximize" style="width:12px; height:12px;"></i> Resize/Crop
+          </button>
+          <button class="universal-module-tab ${this.activeModule === 'convert' ? 'active' : ''}" data-mod="convert">
+            <i data-lucide="refresh-cw" style="width:12px; height:12px;"></i> Format (JPG/PNG)
+          </button>
+          <button class="universal-module-tab ${this.activeModule === 'editor' ? 'active' : ''}" data-mod="editor">
+            <i data-lucide="paintbrush" style="width:12px; height:12px;"></i> Photo Editor
+          </button>
+          <button class="universal-module-tab ${this.activeModule === 'exam' ? 'active' : ''}" data-mod="exam">
+            <i data-lucide="user" style="width:12px; height:12px;"></i> Exam Resizer
+          </button>
+          <button class="universal-module-tab ${this.activeModule === 'watermark' ? 'active' : ''}" data-mod="watermark">
+            <i data-lucide="droplet" style="width:12px; height:12px;"></i> Watermark/Blur
+          </button>
+        `}
+      </div>
 
       <div class="sidebar-scroll-content">
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:0.65rem 0.875rem; display:flex; justify-content:space-between; align-items:center;">
           <div>
             <span style="font-size:0.65rem; font-weight:800; color:#64748b; text-transform:uppercase;">Active Document</span>
-            <p style="font-size:0.9rem; font-weight:900; color:#0f172a;">${selCount} of ${this.pages.length} Pages</p>
+            <p style="font-size:0.9rem; font-weight:900; color:#0f172a;">${selCount} of ${this.pages.length} ${isPdf ? 'Pages' : 'Images'} Selected</p>
           </div>
           <button id="clearAllPagesBtn" style="font-size:0.7rem; font-weight:700; color:#ef4444; hover:underline;">Clear Workspace</button>
         </div>
@@ -1043,9 +904,9 @@ class DocuvateApp {
           </div>
         </div>
 
-        <button id="processBtn" class="btn-primary" ${selCount === 0 && this.pages.length > 0 ? 'disabled' : ''}>
+        <button id="processBtn" class="btn-primary" style="background: ${isPdf ? 'var(--pdf-gradient)' : 'var(--image-gradient)'};" ${selCount === 0 ? 'disabled' : ''}>
           <i data-lucide="play" style="width: 18px; height: 18px; fill: currentColor;"></i>
-          <span id="processBtnText">Apply & Process Document</span>
+          <span>Apply & Process (${selCount} ${isPdf ? 'Pages' : 'Images'})</span>
         </button>
       </div>
     `;
@@ -1087,15 +948,17 @@ class DocuvateApp {
             </a>
             <button id="keepEditingBtn" class="btn-primary" style="background:#0f172a;">
               <i data-lucide="layers" style="width: 18px; height: 18px;"></i>
-              <span>Keep Editing in Studio (Do another action)</span>
+              <span>Keep Editing in Studio (Perform Another Action)</span>
             </button>
           </div>
         </div>
       `;
     }
 
+    const isPdf = this.activeStudio === 'pdf';
+
     return `
-      <!-- Toolbar for Page Operations -->
+      <!-- Toolbar -->
       <div style="width:100%; max-width:1000px; margin-bottom:1rem; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:0.5rem; background:white; padding:0.65rem 1rem; border-radius:12px; border:1px solid #e2e8f0; box-shadow:var(--shadow-sm);">
         <div style="display:flex; align-items:center; gap:0.5rem;">
           <button id="btnSelectAll" style="font-size:0.75rem; font-weight:700; background:#f1f5f9; padding:0.35rem 0.75rem; border-radius:6px; color:#334155;">Select All</button>
@@ -1118,7 +981,7 @@ class DocuvateApp {
         </div>
       </div>
 
-      <!-- Page-Wise Thumbnail Grid / List -->
+      <!-- Page Grid / List -->
       <div class="${this.viewMode === 'grid' ? 'page-grid-container' : 'page-list-container'}" id="pageCardsContainer">
         ${this.pages.map((item, idx) => `
           <div class="page-card ${item.selected ? 'selected' : 'excluded'}" draggable="true" data-id="${item.id}" data-idx="${idx}">
@@ -1126,13 +989,13 @@ class DocuvateApp {
 
             <div class="page-img-wrapper">
               ${item.preview ? `
-                <img src="${item.preview}" alt="Page ${item.pageNumber}" style="transform: rotate(${item.rotation}deg);" />
+                <img src="${item.preview}" alt="${isPdf ? 'Page ' + item.pageNumber : item.fileName}" style="transform: rotate(${item.rotation}deg);" />
               ` : `
                 <i data-lucide="file-text" style="width:36px; height:36px; color:#cbd5e1;"></i>
               `}
 
               ${item.selected ? `
-                <div class="page-selected-check">
+                <div class="page-selected-check" style="background: ${isPdf ? '#e11d48' : '#0284c7'};">
                   <i data-lucide="check" style="width:12px; height:12px; stroke-width:3;"></i>
                 </div>
               ` : ''}
@@ -1140,7 +1003,7 @@ class DocuvateApp {
 
             <div class="page-details">
               <div class="page-title-row">
-                <span class="page-num-label">Page ${item.pageNumber}</span>
+                <span class="page-num-label" style="color: ${isPdf ? '#e11d48' : '#0284c7'};">${isPdf ? 'Page ' + item.pageNumber : 'Image ' + (idx + 1)}</span>
                 <span class="page-source-name" title="${item.fileName}">${item.fileName}</span>
               </div>
 
@@ -1148,7 +1011,7 @@ class DocuvateApp {
                 <button class="page-action-btn rotate-single-btn" data-id="${item.id}" title="Rotate 90°">
                   <i data-lucide="rotate-cw" style="width:13px; height:13px;"></i>
                 </button>
-                <button class="page-action-btn delete-single-btn" data-id="${item.id}" title="Remove Page">
+                <button class="page-action-btn delete-single-btn" data-id="${item.id}" title="Remove Item">
                   <i data-lucide="trash-2" style="width:13px; height:13px;"></i>
                 </button>
                 <div class="page-action-btn page-drag-handle" title="Drag to reorder">
@@ -1164,15 +1027,16 @@ class DocuvateApp {
           <div style="width:36px; height:36px; border-radius:50%; background:white; border:1px solid #e2e8f0; display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-sm);">
             <i data-lucide="plus" style="width:18px; height:18px;"></i>
           </div>
-          <span style="font-size:0.75rem; font-weight:800; text-transform:uppercase;">Add More PDFs</span>
-          <input type="file" id="addMoreInput" accept=".pdf" multiple style="display:none;" />
+          <span style="font-size:0.75rem; font-weight:800; text-transform:uppercase;">Add More</span>
+          <input type="file" id="addMoreInput" accept="${isPdf ? '.pdf' : 'image/*'}" multiple style="display:none;" />
         </div>
       </div>
     `;
   }
 
   renderActiveModuleControls() {
-    const mod = this.activePdfModule;
+    const isPdf = this.activeStudio === 'pdf';
+    const mod = this.activeModule;
     const file = this.selectedFiles[0];
     const originalKB = file ? Math.round(file.size / 1024) : 500;
 
@@ -1210,7 +1074,7 @@ class DocuvateApp {
           </label>
         </div>
       `;
-    } else if (mod === 'sign') {
+    } else if (mod === 'sign' && isPdf) {
       html = `
         <label style="font-size:0.75rem; font-weight:700; color:#475569;">Draw Signature on Pad</label>
         <div style="border:2px dashed #cbd5e1; border-radius:8px; background:#f8fafc; overflow:hidden;">
@@ -1225,7 +1089,7 @@ class DocuvateApp {
         <label style="font-size:0.75rem; font-weight:700; color:#475569; margin-top:0.5rem; display:block;">Opacity (%)</label>
         <input type="range" id="watermarkOpacity" min="10" max="90" value="30" style="width:100%; accent-color:#be123c;" />
       `;
-    } else if (mod === 'numbers') {
+    } else if (mod === 'numbers' && isPdf) {
       html = `
         <label style="font-size:0.75rem; font-weight:700; color:#475569;">Page Number Position</label>
         <div class="preset-grid" style="grid-template-columns: repeat(2, 1fr);">
@@ -1235,31 +1099,56 @@ class DocuvateApp {
           <button class="preset-btn" data-pos="top-right">Top Right</button>
         </div>
       `;
-    } else if (mod === 'security') {
+    } else if (mod === 'security' && isPdf) {
       html = `
         <label style="font-size:0.75rem; font-weight:700; color:#475569;">Document Password Protection</label>
         <input type="password" id="pdfPasswordInput" placeholder="Enter password..." value="123456" style="width:100%; padding:0.5rem; border:1px solid #cbd5e1; border-radius:8px;" />
-        <p style="font-size:0.7rem; color:#94a3b8; margin-top:0.25rem;">Sets AES password encryption locally.</p>
       `;
-    } else if (mod === 'convert') {
+    } else if (mod === 'convert' && isPdf) {
       html = `
         <label style="font-size:0.75rem; font-weight:700; color:#475569;">Conversion Mode</label>
         <div class="preset-grid" style="grid-template-columns: repeat(2, 1fr);">
           <button class="preset-btn active" data-conv="jpg">PDF to JPG (ZIP)</button>
           <button class="preset-btn" data-conv="ocr">OCR Extract Text</button>
-          <button class="preset-btn" data-conv="pdfa">ISO PDF/A</button>
         </div>
       `;
-    } else if (mod === 'repair') {
+    } else if (mod === 'resize' && !isPdf) {
       html = `
-        <label style="font-size:0.75rem; font-weight:700; color:#475569;">Repair & Redact Options</label>
-        <div class="preset-grid" style="grid-template-columns: repeat(2, 1fr);">
-          <button class="preset-btn active" data-repair="xref">Fix XREF Streams</button>
-          <button class="preset-btn" data-repair="redact">Redact Header</button>
+        <label style="font-size:0.75rem; font-weight:700; color:#475569;">Target Dimensions (px)</label>
+        <div style="display:flex; gap:0.5rem;">
+          <input type="number" id="imgResizeWidth" placeholder="Width" value="800" style="width:50%; padding:0.5rem; border:1px solid #cbd5e1; border-radius:8px; font-weight:800;" />
+          <input type="number" id="imgResizeHeight" placeholder="Auto" style="width:50%; padding:0.5rem; border:1px solid #cbd5e1; border-radius:8px;" />
+        </div>
+      `;
+    } else if (mod === 'convert' && !isPdf) {
+      html = `
+        <label style="font-size:0.75rem; font-weight:700; color:#475569;">Export Format</label>
+        <div class="preset-grid">
+          <button class="preset-btn active" data-img-fmt="image/png">PNG</button>
+          <button class="preset-btn" data-img-fmt="image/jpeg">JPG</button>
+          <button class="preset-btn" data-img-fmt="image/webp">WebP</button>
+        </div>
+      `;
+    } else if (mod === 'editor' && !isPdf) {
+      html = `
+        <label style="font-size:0.75rem; font-weight:700; color:#475569;">Brightness</label>
+        <input type="range" id="photoBrightness" min="50" max="150" value="100" style="width:100%; accent-color:#0284c7;" />
+        <label style="font-size:0.75rem; font-weight:700; color:#475569; margin-top:0.5rem; display:block;">Contrast</label>
+        <input type="range" id="photoContrast" min="50" max="150" value="100" style="width:100%; accent-color:#0284c7;" />
+        <label style="font-size:0.75rem; font-weight:700; color:#475569; margin-top:0.5rem; display:block;">Grayscale (%)</label>
+        <input type="range" id="photoGrayscale" min="0" max="100" value="0" style="width:100%; accent-color:#0284c7;" />
+      `;
+    } else if (mod === 'exam' && !isPdf) {
+      html = `
+        <label style="font-size:0.75rem; font-weight:700; color:#475569;">Exam Standards</label>
+        <div class="preset-grid" style="grid-template-columns: 1fr;">
+          <button class="preset-btn active" data-exam="passport" data-w="350" data-h="450" data-kb="50">Passport Photo (350x450, 50KB)</button>
+          <button class="preset-btn" data-exam="signature" data-w="300" data-h="120" data-kb="20">Signature Stamp (300x120, 20KB)</button>
+          <button class="preset-btn" data-exam="ssc" data-w="200" data-h="230" data-kb="50">SSC / UPSC Photo (200x230, 50KB)</button>
         </div>
       `;
     } else {
-      // organize
+      // organize / default
       html = `
         <div>
           <label style="font-size:0.75rem; font-weight:800; color:#475569; display:block; margin-bottom:0.35rem; text-transform:uppercase;">Action / Output Mode</label>
@@ -1291,10 +1180,10 @@ class DocuvateApp {
     const clearAllBtn = sidebarArea.querySelector('#clearAllPagesBtn');
     const keepEditingBtn = canvasArea.querySelector('#keepEditingBtn');
 
-    // Tab switching inside Universal PDF Studio
+    // Module tab switching
     sidebarArea.querySelectorAll('.universal-module-tab').forEach(tab => {
       tab.addEventListener('click', () => {
-        this.activePdfModule = tab.dataset.mod;
+        this.activeModule = tab.dataset.mod;
         this.renderWorkspace();
       });
     });
@@ -1334,8 +1223,8 @@ class DocuvateApp {
       cropMarginSlider.addEventListener('input', () => { cropMarginVal.textContent = `${cropMarginSlider.value}% Margin`; });
     }
 
-    // Position / Conversion / Repair preset buttons
-    ['data-pos', 'data-conv', 'data-repair'].forEach(attr => {
+    // Preset attributes
+    ['data-pos', 'data-conv', 'data-img-fmt', 'data-exam'].forEach(attr => {
       const btns = sidebarArea.querySelectorAll(`.preset-btn[${attr}]`);
       btns.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1345,7 +1234,7 @@ class DocuvateApp {
       });
     });
 
-    // Toolbar actions
+    // Toolbar
     canvasArea.querySelector('#btnSelectAll')?.addEventListener('click', () => {
       this.pages.forEach(p => p.selected = true);
       this.renderWorkspace();
@@ -1379,7 +1268,7 @@ class DocuvateApp {
       if (e.target.files?.length > 0) this.handleFilesAdded(Array.from(e.target.files));
     });
 
-    // Page Card Click (Toggle Selection & Reorder)
+    // Page Card Click & Reorder
     canvasArea.querySelectorAll('.page-card').forEach(card => {
       const pageId = card.dataset.id;
       card.addEventListener('click', (e) => {
@@ -1450,7 +1339,7 @@ class DocuvateApp {
       clearSigBtn?.addEventListener('click', () => ctx.clearRect(0, 0, sigCanvas.width, sigCanvas.height));
     }
 
-    // Clear Workspace
+    // Clear All
     clearAllBtn?.addEventListener('click', () => {
       this.selectedFiles = [];
       this.pages = [];
@@ -1458,15 +1347,15 @@ class DocuvateApp {
       this.renderWorkspace();
     });
 
-    // Keep Editing in Studio button (Continues without re-uploading!)
+    // Keep Editing in Studio button
     keepEditingBtn?.addEventListener('click', async () => {
       if (!this.resultData?.blob) return;
-      const newPdfFile = new File([this.resultData.blob], this.resultData.fileName, { type: 'application/pdf' });
-      this.selectedFiles = [newPdfFile];
+      const newFile = new File([this.resultData.blob], this.resultData.fileName, { type: this.resultData.blob.type || (this.activeStudio === 'pdf' ? 'application/pdf' : 'image/jpeg') });
+      this.selectedFiles = [newFile];
       this.resultData = null;
       this.pages = [];
-      await this.handleFilesAdded([newPdfFile]);
-      this.showToast("Loaded output document into studio! You can continue editing without re-uploading.");
+      await this.handleFilesAdded([newFile]);
+      this.showToast("Loaded result into studio! You can continue with another action.");
     });
 
     processBtn?.addEventListener('click', () => this.executeAction(sidebarArea));
@@ -1492,71 +1381,100 @@ class DocuvateApp {
     };
 
     try {
-      const mod = this.activePdfModule;
+      const isPdf = this.activeStudio === 'pdf';
+      const mod = this.activeModule;
       let result = null;
 
-      // Always assemble the current customized page sequence
-      const compiled = await PdfTools.assemblePdfFromPages(this.pages, onProgress);
-      const compiledFile = new File([compiled.blob], compiled.fileName, { type: 'application/pdf' });
+      if (isPdf) {
+        // PDF Studio Execution
+        const compiled = await PdfTools.assemblePdfFromPages(this.pages, onProgress);
+        const compiledFile = new File([compiled.blob], compiled.fileName, { type: 'application/pdf' });
 
-      if (mod === 'compress') {
-        const targetKB = sidebarArea.querySelector('#targetKbInput')?.value || 200;
-        const strictCeiling = sidebarArea.querySelector('#strictCeilingCheck')?.checked ?? true;
-        result = await PdfTools.compressPdf(compiledFile, targetKB, strictCeiling, onProgress);
-      } else if (mod === 'sign') {
-        const sigCanvas = sidebarArea.querySelector('#sigCanvas');
-        const sigData = sigCanvas ? sigCanvas.toDataURL('image/png') : '';
-        result = await PdfTools.signPdf(compiledFile, sigData, onProgress);
-      } else if (mod === 'watermark') {
-        const text = sidebarArea.querySelector('#watermarkTextInput')?.value || 'CONFIDENTIAL';
-        const opacity = (sidebarArea.querySelector('#watermarkOpacity')?.value || 30) / 100;
-        result = await PdfTools.addWatermark(compiledFile, text, opacity, onProgress);
-      } else if (mod === 'numbers') {
-        const pos = sidebarArea.querySelector('.preset-btn[data-pos].active')?.dataset?.pos || 'bottom-center';
-        result = await PdfTools.addPageNumbers(compiledFile, pos, onProgress);
-      } else if (mod === 'security') {
-        const pwd = sidebarArea.querySelector('#pdfPasswordInput')?.value || '123456';
-        result = await PdfTools.protectPdf(compiledFile, pwd, onProgress);
-      } else if (mod === 'convert') {
-        const convType = sidebarArea.querySelector('.preset-btn[data-conv].active')?.dataset?.conv || 'jpg';
-        if (convType === 'ocr') result = await PdfTools.ocrPdf(compiledFile, 'eng', onProgress);
-        else if (convType === 'pdfa') result = await PdfTools.pdfToPdfA(compiledFile, onProgress);
-        else result = await PdfTools.pdfToJpg(compiledFile, 2.0, onProgress);
-      } else if (mod === 'repair') {
-        const repairType = sidebarArea.querySelector('.preset-btn[data-repair].active')?.dataset?.repair || 'xref';
-        if (repairType === 'redact') result = await PdfTools.redactPdf(compiledFile, onProgress);
-        else result = await PdfTools.repairPdf(compiledFile, onProgress);
-      } else {
-        // organize export mode
-        const exportMode = sidebarArea.querySelector('.preset-btn[data-export-mode].active')?.dataset?.exportMode || 'merge';
-        if (exportMode === 'crop') {
-          const cropMargin = parseInt(sidebarArea.querySelector('#cropMarginSlider')?.value || 10);
-          result = await PdfTools.cropPdf(compiledFile, cropMargin, onProgress);
-        } else if (exportMode === 'split' && window.JSZip) {
-          onProgress(20, "Generating split bundle...");
-          const zip = new JSZip();
-          const selectedPages = this.pages.filter(p => p.selected);
-          for (let i = 0; i < selectedPages.length; i++) {
-            const single = await PdfTools.assemblePdfFromPages([selectedPages[i]], () => {});
-            zip.file(`page-${selectedPages[i].pageNumber}-${selectedPages[i].fileName}`, single.blob);
-          }
-          const zipBlob = await zip.generateAsync({ type: 'blob' });
-          result = {
-            blob: zipBlob,
-            blobUrl: URL.createObjectURL(zipBlob),
-            fileName: 'split-pages-bundle.zip',
-            sizeKB: Math.round(zipBlob.size / 1024),
-            totalPages: selectedPages.length
-          };
+        if (mod === 'compress') {
+          const targetKB = sidebarArea.querySelector('#targetKbInput')?.value || 200;
+          const strictCeiling = sidebarArea.querySelector('#strictCeilingCheck')?.checked ?? true;
+          result = await PdfTools.compressPdf(compiledFile, targetKB, strictCeiling, onProgress);
+        } else if (mod === 'sign') {
+          const sigCanvas = sidebarArea.querySelector('#sigCanvas');
+          const sigData = sigCanvas ? sigCanvas.toDataURL('image/png') : '';
+          result = await PdfTools.signPdf(compiledFile, sigData, onProgress);
+        } else if (mod === 'watermark') {
+          const text = sidebarArea.querySelector('#watermarkTextInput')?.value || 'CONFIDENTIAL';
+          const opacity = (sidebarArea.querySelector('#watermarkOpacity')?.value || 30) / 100;
+          result = await PdfTools.addWatermark(compiledFile, text, opacity, onProgress);
+        } else if (mod === 'numbers') {
+          const pos = sidebarArea.querySelector('.preset-btn[data-pos].active')?.dataset?.pos || 'bottom-center';
+          result = await PdfTools.addPageNumbers(compiledFile, pos, onProgress);
+        } else if (mod === 'security') {
+          const pwd = sidebarArea.querySelector('#pdfPasswordInput')?.value || '123456';
+          result = await PdfTools.protectPdf(compiledFile, pwd, onProgress);
+        } else if (mod === 'convert') {
+          const convType = sidebarArea.querySelector('.preset-btn[data-conv].active')?.dataset?.conv || 'jpg';
+          if (convType === 'ocr') result = await PdfTools.ocrPdf(compiledFile, 'eng', onProgress);
+          else result = await PdfTools.pdfToJpg(compiledFile, 2.0, onProgress);
+        } else if (mod === 'repair') {
+          result = await PdfTools.repairPdf(compiledFile, onProgress);
         } else {
-          result = compiled;
+          // organize
+          const exportMode = sidebarArea.querySelector('.preset-btn[data-export-mode].active')?.dataset?.exportMode || 'merge';
+          if (exportMode === 'crop') {
+            const cropMargin = parseInt(sidebarArea.querySelector('#cropMarginSlider')?.value || 10);
+            result = await PdfTools.cropPdf(compiledFile, cropMargin, onProgress);
+          } else if (exportMode === 'split' && window.JSZip) {
+            onProgress(20, "Generating split bundle...");
+            const zip = new JSZip();
+            const selectedPages = this.pages.filter(p => p.selected);
+            for (let i = 0; i < selectedPages.length; i++) {
+              const single = await PdfTools.assemblePdfFromPages([selectedPages[i]], () => {});
+              zip.file(`page-${selectedPages[i].pageNumber}-${selectedPages[i].fileName}`, single.blob);
+            }
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            result = {
+              blob: zipBlob,
+              blobUrl: URL.createObjectURL(zipBlob),
+              fileName: 'split-pages-bundle.zip',
+              sizeKB: Math.round(zipBlob.size / 1024),
+              totalPages: selectedPages.length
+            };
+          } else {
+            result = compiled;
+          }
+        }
+      } else {
+        // Image Studio Execution
+        const firstSelected = this.pages.find(p => p.selected) || this.pages[0];
+        const imgFile = firstSelected.file;
+
+        if (mod === 'compress') {
+          const targetKB = sidebarArea.querySelector('#targetKbInput')?.value || 100;
+          result = await ImageTools.compressImage(imgFile, targetKB, onProgress);
+        } else if (mod === 'resize') {
+          const w = parseInt(sidebarArea.querySelector('#imgResizeWidth')?.value || 800);
+          result = await ImageTools.resizeImage(imgFile, w, null, true, onProgress);
+        } else if (mod === 'convert') {
+          const fmt = sidebarArea.querySelector('.preset-btn[data-img-fmt].active')?.dataset?.imgFmt || 'image/png';
+          result = await ImageTools.convertFormat(imgFile, fmt, onProgress);
+        } else if (mod === 'editor') {
+          const b = sidebarArea.querySelector('#photoBrightness')?.value || 100;
+          const c = sidebarArea.querySelector('#photoContrast')?.value || 100;
+          const g = sidebarArea.querySelector('#photoGrayscale')?.value || 0;
+          result = await ImageTools.editPhoto(imgFile, b, c, g, 0, onProgress);
+        } else if (mod === 'exam') {
+          const activeExam = sidebarArea.querySelector('.preset-btn[data-exam].active');
+          const w = parseInt(activeExam?.dataset?.w || 350);
+          const h = parseInt(activeExam?.dataset?.h || 450);
+          const kb = parseInt(activeExam?.dataset?.kb || 50);
+          result = await ImageTools.examPhotoResize(imgFile, w, h, kb, onProgress);
+        } else if (mod === 'watermark') {
+          const text = sidebarArea.querySelector('#watermarkTextInput')?.value || 'DOCUVATE';
+          result = await ImageTools.watermarkImage(imgFile, text, 0.5, onProgress);
         }
       }
 
       this.resultData = result;
       this.isProcessing = false;
       this.renderWorkspace();
-      this.showToast("Success! Document processed.");
+      this.showToast("Success! Studio processing complete.");
 
       if (result.blobUrl && result.fileName && !result.fileName.endsWith('.zip')) {
         const a = document.createElement('a');

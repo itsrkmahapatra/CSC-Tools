@@ -4,16 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Docuvate - 100% Private Client-Side PDF & Image Utilities</title>
-  <meta name="description" content="Resize PDFs to desired KB sizes effortlessly. 100% client-side, private, and free PDF & image processing tools. Merge, split, compress, convert, and edit files directly in your browser.">
-  <meta name="keywords" content="resize pdf to target kb, compress pdf, merge pdf, split pdf, image compressor, ocr pdf, exam photo resizer, client side pdf tools, docuvate">
+  <title>Docuvate - Master PDF & Image Studios (100% Private Client-Side)</title>
+  <meta name="description" content="All-in-one Master PDF Studio and Master Image Studio. Resize to desired KB sizes effortlessly, merge, split, sign, edit, and convert with 100% client-side military privacy.">
+  <meta name="keywords" content="master pdf studio, master image studio, resize pdf target kb, image compressor, pdf organizer, private document workstation, docuvate">
   <meta name="author" content="Raj Kishor Mahapatra">
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://itsrkmahapatra.github.io/Docuvate/">
-  <meta property="og:title" content="Docuvate - 100% Private PDF & Image Utilities">
-  <meta property="og:description" content="Resize PDFs to desired KB sizes effortlessly with 100% accuracy. Complete suite of private, browser-based PDF & Image tools.">
+  <meta property="og:title" content="Docuvate - Master PDF & Image Studios">
+  <meta property="og:description" content="Complete all-in-one private client-side PDF and Image workstations. Zero server uploads.">
   <meta property="og:image" content="assets/developer.png">
 
   <!-- Favicon -->
@@ -27,7 +27,7 @@
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "Docuvate",
+    "name": "Docuvate Master Studios",
     "operatingSystem": "All (Windows, macOS, Linux, iOS, Android)",
     "applicationCategory": "BusinessApplication",
     "browserRequirements": "Requires modern browser with WebAssembly and JavaScript enabled. Runs 100% client-side offline.",
@@ -41,7 +41,7 @@
       "name": "Raj Kishor Mahapatra",
       "url": "https://itsrkmahapatra.qzz.io/"
     },
-    "description": "A comprehensive suite of 100% client-side, privacy-focused tools for PDF and Image processing. Resize PDFs to desired KB sizes effortlessly."
+    "description": "Two unified all-in-one workstations for PDF and Image processing with 100% offline client-side security."
   }
   </script>
 
@@ -74,7 +74,7 @@
   <!-- Top Security Banner -->
   <header class="privacy-banner">
     <i data-lucide="lock" style="width: 14px; height: 14px;"></i>
-    <span>100% Local Sandboxed Processing. Your files never leave your computer.</span>
+    <span>100% Client-Side Sandboxed Processing. Your files never leave your computer.</span>
   </header>
 
   <!-- Navigation Bar -->
@@ -83,322 +83,102 @@
       <span class="brand-badge">Doc</span>uvate
     </a>
     <div class="nav-links">
-      <a href="#tools" class="nav-link">Tools (37)</a>
+      <a href="#pdf-studio" class="nav-link" id="navPdfStudio">Master PDF Studio</a>
+      <a href="#image-studio" class="nav-link" id="navImageStudio">Master Image Studio</a>
       <a href="terms.html" class="nav-link">Terms</a>
       <a href="disclaimer.html" class="nav-link">Disclaimer</a>
     </div>
   </nav>
 
-  <!-- Hero Section -->
+  <!-- Main Hero & Studio Selection -->
   <main>
     <section class="hero-section">
       <div class="hero-pill">
         <i data-lucide="sparkles" style="width: 12px; height: 12px;"></i>
-        <span>100% Client-Side Engine • Zero Server Uploads</span>
+        <span>Two Master Studios • Zero Server Uploads</span>
       </div>
-      <h1 class="hero-title">Every tool you need to work with PDFs & Images</h1>
-      <p class="hero-subtitle">Resize PDFs to desired KB sizes effortlessly, merge, split, convert, and edit with military-grade privacy.</p>
-
-      <!-- Master Flagship Banner -->
-      <div class="flagship-banner-container" style="margin-bottom: 2.5rem; text-align: left;">
-        <div class="flagship-banner">
-          <div class="flagship-content">
-            <div style="display:inline-flex; align-items:center; gap:0.4rem; background:rgba(225, 29, 72, 0.2); border:1px solid rgba(225, 29, 72, 0.4); padding:0.25rem 0.75rem; border-radius:9999px; font-size:0.75rem; font-weight:800; color:#fca5a5; margin-bottom:0.75rem;">
-              <i data-lucide="sparkles" style="width:12px; height:12px;"></i>
-              <span>All-In-One Document Workstation</span>
-            </div>
-            <h2 class="flagship-title">Master PDF Studio</h2>
-            <p class="flagship-desc">
-              Organize, merge, compress to exact KB limits, sign, watermark, add page numbers, protect, and OCR your PDF — all in a single workspace without ever having to upload your file multiple times.
-            </p>
-            <button id="launchMasterStudioBtn" class="flagship-btn">
-              <i data-lucide="layers" style="width: 20px; height: 20px;"></i>
-              <span>Launch All-In-One Studio</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Real-time Search Input -->
-      <div class="search-box-wrapper">
-        <i data-lucide="search" class="search-icon"></i>
-        <input type="text" id="searchInput" class="search-input" placeholder="Search across all 37 tools (e.g. compress, merge, resize, ocr)..." autocomplete="off" />
-      </div>
-
-      <!-- Category Filter Tabs -->
-      <div class="category-tabs" id="categoryTabs">
-        <button class="category-tab active" data-category="all">All Tools (37)</button>
-        <button class="category-tab" data-category="pdf-core">PDF Core & Org (7)</button>
-        <button class="category-tab" data-category="pdf-sec">PDF Optimization & Sec (9)</button>
-        <button class="category-tab" data-category="convert">Convert Matrix (5)</button>
-        <button class="category-tab" data-category="image">Image Processing (9)</button>
-        <button class="category-tab" data-category="ai">Visual & AI Tools (7)</button>
-      </div>
+      <h1 class="hero-title">Universal Document & Visual Studios</h1>
+      <p class="hero-subtitle">Upload your document once and perform any operation in a persistent, all-in-one private workstation.</p>
     </section>
 
-    <!-- Master Tools Container -->
-    <section class="tools-container" id="toolsContainer">
+    <!-- Two Flagship Studios Section -->
+    <section class="studios-container">
       
-      <!-- Category 1: PDF Core & Organization (Unified Studio) -->
-      <div class="category-block" data-category="pdf-core">
-        <div class="category-header">
-          <h2 class="category-title">PDF Core & Page Studio (Unified)</h2>
-          <span class="category-count">All-in-One</span>
-        </div>
-        <div class="tool-grid">
-          <div class="tool-card" data-cat="pdf-core" data-id="pdf-organizer" style="grid-column: 1 / -1; background: linear-gradient(135deg, #ffffff 0%, #fff1f2 100%); border: 2px solid #fecdd3;">
-            <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-              <div style="display: flex; gap: 1rem; align-items: center;">
-                <div class="tool-icon-wrapper" style="width: 56px; height: 56px; margin-bottom: 0; background: #fee2e2; color: #e11d48; font-size: 1.75rem;">
-                  <i data-lucide="layers" style="width: 30px; height: 30px;"></i>
-                </div>
-                <div>
-                  <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <h3 class="tool-name" style="font-size: 1.25rem; margin-bottom: 0.2rem;">PDF Organizer Studio (All-in-One)</h3>
-                    <span class="tool-badge-pill" style="margin-top: 0; background: #e11d48; color: white;">Unified 7-in-1</span>
-                  </div>
-                  <p class="tool-desc" style="font-size: 0.875rem; color: #475569;">
-                    Merge multiple PDFs, split & extract ranges, reorder sheets with visual drag & drop, delete pages, rotate 90°/180°/270°, and crop margins in a single interactive canvas.
-                  </p>
-                </div>
-              </div>
-              <button class="btn-primary" style="width: auto; padding: 0.65rem 1.5rem; font-size: 0.875rem;">
-                <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i>
-                <span>Open Studio</span>
-              </button>
-            </div>
+      <!-- Studio 1: Master PDF Studio -->
+      <div class="studio-flagship-card studio-pdf" id="cardPdfStudio">
+        <div class="studio-header-group">
+          <div class="studio-icon-large pdf-gradient-icon">
+            <i data-lucide="layers" style="width: 38px; height: 38px;"></i>
           </div>
+          <div class="studio-badge-pill pdf-badge">Universal PDF Workstation</div>
+        </div>
 
-          <div class="tool-card" data-cat="pdf-core" data-id="pdf-merge">
-            <div class="tool-icon-wrapper"><i data-lucide="layers"></i></div>
-            <h3 class="tool-name">Merge PDF</h3>
-            <p class="tool-desc">Combine multiple PDF documents into a single file in any chosen order.</p>
-          </div>
-          <div class="tool-card" data-cat="pdf-core" data-id="pdf-split">
-            <div class="tool-icon-wrapper"><i data-lucide="scissors"></i></div>
-            <h3 class="tool-name">Split / Extract Pages</h3>
-            <p class="tool-desc">Separate pages, custom ranges, or extract selected sheets into new files.</p>
-          </div>
-          <div class="tool-card" data-cat="pdf-core" data-id="pdf-organize">
-            <div class="tool-icon-wrapper"><i data-lucide="columns"></i></div>
-            <h3 class="tool-name">Organize, Rotate & Delete</h3>
-            <p class="tool-desc">Visually reorder sheets, rotate individual/all pages, and remove unwanted sheets.</p>
-          </div>
-          <div class="tool-card" data-cat="pdf-core" data-id="pdf-crop">
-            <div class="tool-icon-wrapper"><i data-lucide="crop"></i></div>
-            <h3 class="tool-name">Crop PDF</h3>
-            <p class="tool-desc">Adjust printable bounding box margins across all or selected sheets.</p>
-          </div>
+        <h2 class="studio-card-title">Master PDF Studio</h2>
+        <p class="studio-card-desc">
+          Complete all-in-one PDF workstation. Organize, merge, split, compress to exact KB limits, sign, watermark, add page numbers, protect, convert, and OCR without re-uploading your files.
+        </p>
+
+        <!-- Feature Tags -->
+        <div class="studio-features-list">
+          <span class="feature-tag"><i data-lucide="check"></i> Merge & Organize Pages</span>
+          <span class="feature-tag"><i data-lucide="check"></i> 100% Target KB Compressor</span>
+          <span class="feature-tag"><i data-lucide="check"></i> Draw Signature Stamp</span>
+          <span class="feature-tag"><i data-lucide="check"></i> Watermark & Page Numbers</span>
+          <span class="feature-tag"><i data-lucide="check"></i> Split, Extract & Crop</span>
+          <span class="feature-tag"><i data-lucide="check"></i> Password Protect & Unlock</span>
+          <span class="feature-tag"><i data-lucide="check"></i> PDF to JPG & AI OCR</span>
         </div>
+
+        <button class="btn-studio-launch btn-pdf-launch" id="btnLaunchPdfStudio">
+          <i data-lucide="sparkles" style="width: 20px; height: 20px;"></i>
+          <span>Launch Master PDF Studio</span>
+        </button>
       </div>
 
-      <!-- Category 2: PDF Optimization & Security -->
-      <div class="category-block" data-category="pdf-sec">
-        <div class="category-header">
-          <h2 class="category-title">PDF Optimization & Security</h2>
-          <span class="category-count">9</span>
+      <!-- Studio 2: Master Image Studio -->
+      <div class="studio-flagship-card studio-image" id="cardImageStudio">
+        <div class="studio-header-group">
+          <div class="studio-icon-large image-gradient-icon">
+            <i data-lucide="image" style="width: 38px; height: 38px;"></i>
+          </div>
+          <div class="studio-badge-pill image-badge">Universal Image Workstation</div>
         </div>
-        <div class="tool-grid">
-          <div class="tool-card" data-cat="pdf-sec" data-id="pdf-compress">
-            <div class="tool-icon-wrapper"><i data-lucide="file-heart"></i></div>
-            <h3 class="tool-name">Compress & Resize PDF</h3>
-            <p class="tool-desc">Resize PDFs to desired KB sizes effortlessly with 100% accuracy targeting.</p>
-            <span class="tool-badge-pill">100% Target KB</span>
-          </div>
-          <div class="tool-card" data-cat="pdf-sec" data-id="pdf-repair">
-            <div class="tool-icon-wrapper"><i data-lucide="wrench"></i></div>
-            <h3 class="tool-name">Repair PDF</h3>
-            <p class="tool-desc">Scan broken streams, fix corrupted XREF tables, and salvage unreadable PDF bytes.</p>
-          </div>
-          <div class="tool-card" data-cat="pdf-sec" data-id="pdf-unlock">
-            <div class="tool-icon-wrapper"><i data-lucide="unlock"></i></div>
-            <h3 class="tool-name">Unlock PDF</h3>
-            <p class="tool-desc">Strip password protections and restrictions if security pass is provided.</p>
-          </div>
-          <div class="tool-card" data-cat="pdf-sec" data-id="pdf-protect">
-            <div class="tool-icon-wrapper"><i data-lucide="lock"></i></div>
-            <h3 class="tool-name">Protect PDF</h3>
-            <p class="tool-desc">Encrypt documents using standard passwords to prevent unauthorized access.</p>
-          </div>
-          <div class="tool-card" data-cat="pdf-sec" data-id="pdf-sign">
-            <div class="tool-icon-wrapper"><i data-lucide="file-signature"></i></div>
-            <h3 class="tool-name">Sign PDF</h3>
-            <p class="tool-desc">Interactive signature pad to draw, type, or stamp signatures onto pages.</p>
-          </div>
-          <div class="tool-card" data-cat="pdf-sec" data-id="pdf-page-numbers">
-            <div class="tool-icon-wrapper"><i data-lucide="hash"></i></div>
-            <h3 class="tool-name">Add Page Numbers</h3>
-            <p class="tool-desc">Inject custom dynamic numbering scripts onto specific margins.</p>
-          </div>
-          <div class="tool-card" data-cat="pdf-sec" data-id="pdf-watermark">
-            <div class="tool-icon-wrapper"><i data-lucide="droplet"></i></div>
-            <h3 class="tool-name">Add Watermark</h3>
-            <p class="tool-desc">Stamp customizable text across chosen coordinate layers.</p>
-          </div>
-          <div class="tool-card" data-cat="pdf-sec" data-id="pdf-redact">
-            <div class="tool-icon-wrapper"><i data-lucide="eraser"></i></div>
-            <h3 class="tool-name">Redact PDF</h3>
-            <p class="tool-desc">Permanently black out/sanitize sensitive structural text layers locally.</p>
-          </div>
-          <div class="tool-card" data-cat="pdf-sec" data-id="pdf-compare">
-            <div class="tool-icon-wrapper"><i data-lucide="columns"></i></div>
-            <h3 class="tool-name">Compare PDF</h3>
-            <p class="tool-desc">Visual double-pane window layout to highlight changes between versions.</p>
-          </div>
-        </div>
-      </div>
 
-      <!-- Category 3: Conversion Matrix -->
-      <div class="category-block" data-category="convert">
-        <div class="category-header">
-          <h2 class="category-title">Conversion Matrix</h2>
-          <span class="category-count">5</span>
-        </div>
-        <div class="tool-grid">
-          <div class="tool-card" data-cat="convert" data-id="convert-jpg-to-pdf">
-            <div class="tool-icon-wrapper"><i data-lucide="file-image"></i></div>
-            <h3 class="tool-name">JPG to PDF</h3>
-            <p class="tool-desc">Convert standalone or bulk image assets directly into a clean compiled PDF.</p>
-          </div>
-          <div class="tool-card" data-cat="convert" data-id="convert-html-to-pdf">
-            <div class="tool-icon-wrapper"><i data-lucide="globe"></i></div>
-            <h3 class="tool-name">HTML to PDF</h3>
-            <p class="tool-desc">Render HTML markup and text blocks directly into formatted vector PDF.</p>
-          </div>
-          <div class="tool-card" data-cat="convert" data-id="convert-pdf-to-jpg">
-            <div class="tool-icon-wrapper"><i data-lucide="image"></i></div>
-            <h3 class="tool-name">PDF to JPG</h3>
-            <p class="tool-desc">Rasterize vector pages into high-resolution discrete JPG images.</p>
-          </div>
-          <div class="tool-card" data-cat="convert" data-id="convert-pdf-to-pdfa">
-            <div class="tool-icon-wrapper"><i data-lucide="file-check"></i></div>
-            <h3 class="tool-name">PDF to PDF/A</h3>
-            <p class="tool-desc">Standardize output structures into ISO-compliant format for archiving.</p>
-          </div>
-          <div class="tool-card" data-cat="convert" data-id="convert-ocr-pdf">
-            <div class="tool-icon-wrapper"><i data-lucide="scan-text"></i></div>
-            <h3 class="tool-name">OCR PDF</h3>
-            <p class="tool-desc">Extract selectable text from flat scanned images using browser WASM OCR.</p>
-            <span class="tool-badge-pill">AI OCR</span>
-          </div>
-        </div>
-      </div>
+        <h2 class="studio-card-title">Master Image Studio</h2>
+        <p class="studio-card-desc">
+          Unified image editing and optimization suite. Compress to target KB, resize dimensions, crop, convert formats (JPG, PNG, WebP), rotate, flip, filter adjustments, memes, blur, and exam photo formatting.
+        </p>
 
-      <!-- Category 4: Image Processing -->
-      <div class="category-block" data-category="image">
-        <div class="category-header">
-          <h2 class="category-title">Image Processing & Optimization</h2>
-          <span class="category-count">9</span>
+        <!-- Feature Tags -->
+        <div class="studio-features-list">
+          <span class="feature-tag"><i data-lucide="check"></i> Compress to Exact Target KB</span>
+          <span class="feature-tag"><i data-lucide="check"></i> Resize & Crop Dimensions</span>
+          <span class="feature-tag"><i data-lucide="check"></i> Convert (JPG, PNG, WebP)</span>
+          <span class="feature-tag"><i data-lucide="check"></i> Rotate & Flip Transforms</span>
+          <span class="feature-tag"><i data-lucide="check"></i> Photo Editor & Filters</span>
+          <span class="feature-tag"><i data-lucide="check"></i> Exam & Passport Photo Resizer</span>
+          <span class="feature-tag"><i data-lucide="check"></i> Watermark, Blur & Memes</span>
         </div>
-        <div class="tool-grid">
-          <div class="tool-card" data-cat="image" data-id="image-compress">
-            <div class="tool-icon-wrapper"><i data-lucide="expand"></i></div>
-            <h3 class="tool-name">Compress IMAGE</h3>
-            <p class="tool-desc">Optimize PNG, JPG, and WebP assets to exact target KB size limits.</p>
-          </div>
-          <div class="tool-card" data-cat="image" data-id="image-resize">
-            <div class="tool-icon-wrapper"><i data-lucide="maximize"></i></div>
-            <h3 class="tool-name">Resize IMAGE</h3>
-            <p class="tool-desc">Scale dimensions up or down using width and height pixel rules.</p>
-          </div>
-          <div class="tool-card" data-cat="image" data-id="image-crop">
-            <div class="tool-icon-wrapper"><i data-lucide="crop"></i></div>
-            <h3 class="tool-name">Crop IMAGE</h3>
-            <p class="tool-desc">Trim edges matching fixed or custom boundary frames.</p>
-          </div>
-          <div class="tool-card" data-cat="image" data-id="image-convert-jpg">
-            <div class="tool-icon-wrapper"><i data-lucide="refresh-cw"></i></div>
-            <h3 class="tool-name">Convert to JPG</h3>
-            <p class="tool-desc">Transform PNG, WebP, and standard images straight into JPEG format.</p>
-          </div>
-          <div class="tool-card" data-cat="image" data-id="image-convert-from-jpg">
-            <div class="tool-icon-wrapper"><i data-lucide="refresh-cw"></i></div>
-            <h3 class="tool-name">Convert from JPG</h3>
-            <p class="tool-desc">Export JPG images into PNG (with transparency) or modern WebP format.</p>
-          </div>
-          <div class="tool-card" data-cat="image" data-id="image-rotate">
-            <div class="tool-icon-wrapper"><i data-lucide="rotate-cw"></i></div>
-            <h3 class="tool-name">Rotate IMAGE</h3>
-            <p class="tool-desc">Shift portrait/landscape visuals dynamically by 90-degree steps.</p>
-          </div>
-          <div class="tool-card" data-cat="image" data-id="image-flip">
-            <div class="tool-icon-wrapper"><i data-lucide="flip-horizontal"></i></div>
-            <h3 class="tool-name">Flip Image</h3>
-            <p class="tool-desc">Mirror any visual instantly along horizontal or vertical axes.</p>
-          </div>
-          <div class="tool-card" data-cat="image" data-id="image-html-to-image">
-            <div class="tool-icon-wrapper"><i data-lucide="globe"></i></div>
-            <h3 class="tool-name">HTML to IMAGE</h3>
-            <p class="tool-desc">Canvas-capture rendering loop extracting HTML graphics to image files.</p>
-          </div>
-          <div class="tool-card" data-cat="image" data-id="image-metadata">
-            <div class="tool-icon-wrapper"><i data-lucide="camera"></i></div>
-            <h3 class="tool-name">View Image Metadata</h3>
-            <p class="tool-desc">Read and display underlying EXIF and image metadata securely.</p>
-          </div>
-        </div>
-      </div>
 
-      <!-- Category 5: Visual Creators & AI Tools -->
-      <div class="category-block" data-category="ai">
-        <div class="category-header">
-          <h2 class="category-title">Visual Creators & Modern AI Tools</h2>
-          <span class="category-count">7</span>
-        </div>
-        <div class="tool-grid">
-          <div class="tool-card" data-cat="ai" data-id="ai-upscale">
-            <div class="tool-icon-wrapper"><i data-lucide="maximize"></i></div>
-            <h3 class="tool-name">Photo Upscale</h3>
-            <p class="tool-desc">Enhance image resolution and clarity with bicubic super-resolution.</p>
-            <span class="tool-badge-pill">AI HD</span>
-          </div>
-          <div class="tool-card" data-cat="ai" data-id="ai-remove-bg">
-            <div class="tool-icon-wrapper"><i data-lucide="wand-2"></i></div>
-            <h3 class="tool-name">Remove Background</h3>
-            <p class="tool-desc">Remove and extract transparent image backgrounds locally in-browser.</p>
-          </div>
-          <div class="tool-card" data-cat="ai" data-id="ai-meme-generator">
-            <div class="tool-icon-wrapper"><i data-lucide="smile"></i></div>
-            <h3 class="tool-name">Meme Generator</h3>
-            <p class="tool-desc">Custom overlay studio to apply stylized Impact text over templates.</p>
-          </div>
-          <div class="tool-card" data-cat="ai" data-id="ai-photo-editor">
-            <div class="tool-icon-wrapper"><i data-lucide="paintbrush"></i></div>
-            <h3 class="tool-name">Photo Editor</h3>
-            <p class="tool-desc">Studio canvas for adjusting brightness, contrast, grayscale, and sepia filters.</p>
-          </div>
-          <div class="tool-card" data-cat="ai" data-id="ai-watermark-image">
-            <div class="tool-icon-wrapper"><i data-lucide="droplet"></i></div>
-            <h3 class="tool-name">Watermark IMAGE</h3>
-            <p class="tool-desc">Overlay transparent branding marks or text configurations on photos.</p>
-          </div>
-          <div class="tool-card" data-cat="ai" data-id="ai-blur">
-            <div class="tool-icon-wrapper"><i data-lucide="eraser"></i></div>
-            <h3 class="tool-name">Blur Face / Photo</h3>
-            <p class="tool-desc">Mask sensitive areas or faces using privacy blur filters.</p>
-          </div>
-          <div class="tool-card" data-cat="ai" data-id="ai-exam-photo">
-            <div class="tool-icon-wrapper"><i data-lucide="user"></i></div>
-            <h3 class="tool-name">Exam Photo Resizer</h3>
-            <p class="tool-desc">Strict dimension and target KB cropping for UPSC, SSC, and passport portals.</p>
-            <span class="tool-badge-pill">Exam Ready</span>
-          </div>
-        </div>
+        <button class="btn-studio-launch btn-image-launch" id="btnLaunchImageStudio">
+          <i data-lucide="sparkles" style="width: 20px; height: 20px;"></i>
+          <span>Launch Master Image Studio</span>
+        </button>
       </div>
 
     </section>
   </main>
 
-  <!-- Interactive Workspace Modal -->
+  <!-- Interactive Workspace Modal / Fullscreen Environment -->
   <div class="workspace-overlay" id="workspaceOverlay">
     <div class="workspace-modal">
       <div class="workspace-header">
         <div class="workspace-title-group">
-          <div style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></div>
-          <h3 class="workspace-title" id="workspaceTitle">Tool Workspace</h3>
+          <div id="workspaceStatusIndicator" style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444;"></div>
+          <h3 class="workspace-title" id="workspaceTitle">Master Studio</h3>
         </div>
-        <button class="workspace-close-btn" id="workspaceCloseBtn" aria-label="Close">
-          <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+        <button class="workspace-close-btn" id="workspaceCloseBtn" aria-label="Close Studio">
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
         </button>
       </div>
       <div class="workspace-body" id="workspaceBody">
@@ -414,14 +194,14 @@
   <footer class="site-footer">
     <img src="assets/developer.png" alt="Raj Kishor Mahapatra" class="dev-avatar" />
     <p><strong>Docuvate</strong> • Engineered by <strong>Raj Kishor Mahapatra</strong></p>
-    <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.25rem;">Free, Private, and Open Source Client-Side Utilities</p>
+    <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.25rem;">Free, Private, and Open Source Client-Side Workstations</p>
     <div class="footer-links">
       <a href="terms.html" class="footer-link">Terms & Conditions</a>
       <a href="disclaimer.html" class="footer-link">Disclaimer</a>
     </div>
   </footer>
 
-  <!-- Application Logic (Standard script tag for 100% file:// and web compatibility) -->
+  <!-- Application Logic -->
   <script src="js/app.js"></script>
   <!-- Support Widget -->
   <script src="js/upi-widget.js" defer></script>
