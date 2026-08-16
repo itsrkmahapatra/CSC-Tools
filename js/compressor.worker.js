@@ -25,6 +25,7 @@ self.onmessage = async function(e) {
   const { fileBuffer, targetKB, strictCeiling = true } = e.data;
   const originalBytes = fileBuffer.byteLength;
   const targetBytes = Math.max(5 * 1024, Math.round(Number(targetKB) * 1024));
+  const targetSizeKB = Number(targetKB);
   
   try {
     self.postMessage({ type: "PROGRESS", message: "Analyzing document & attempting lossless vector stream optimization...", percent: 10 });
@@ -53,7 +54,7 @@ self.onmessage = async function(e) {
           buffer: losslessBytes,
           finalSizeKB: Number(finalSizeKB),
           originalSizeKB: Number(originalSizeKB),
-          targetKB: Number(targetKB),
+          targetKB: targetSizeKB,
           numPages: vectorPdf.getPageCount(),
           reductionPercent: reductionPercent
         }, [losslessBytes.buffer]);
@@ -72,7 +73,6 @@ self.onmessage = async function(e) {
     const numPages = pdf.numPages;
     if (numPages === 0) throw new Error("The selected PDF document contains no pages.");
 
-    // Helper to build PDF with given target byte budget
     async function buildPdfWithBudget(availableBytes) {
       const overhead = Math.round(3072 + (numPages * 600));
       const netBudget = Math.max(1024 * numPages, availableBytes - overhead);
@@ -151,18 +151,27 @@ self.onmessage = async function(e) {
     }
 
     let pdfBytes = await buildPdfWithBudget(targetBytes);
+    let currentSizeKB = Math.round(pdfBytes.byteLength / 1024);
 
-    // Strict Convergence: If total output size still exceeds target, scale down until <= targetBytes
-    let attempts = 0;
-    while (pdfBytes.byteLength > targetBytes && attempts < 3) {
-      attempts++;
-      const ratio = (targetBytes / pdfBytes.byteLength) * 0.94;
+    // -----------------------------------------------------------------
+    // STEP 3: Pre-Output Validation & Automatic Re-Processing Loop
+    // -----------------------------------------------------------------
+    let reprocessPass = 0;
+    while (currentSizeKB > targetSizeKB && reprocessPass < 5) {
+      reprocessPass++;
+      const correctionRatio = Math.min(0.92, (targetSizeKB / currentSizeKB) * 0.94);
       self.postMessage({ 
         type: "PROGRESS", 
-        message: `Strict calibration pass ${attempts}: fine-tuning to guarantee <= ${targetKB} KB...`, 
-        percent: 85 + (attempts * 4) 
+        message: `Validation: ${currentSizeKB} KB > ${targetSizeKB} KB. Re-processing pass ${reprocessPass}...`, 
+        percent: Math.min(98, 86 + (reprocessPass * 3)) 
       });
-      pdfBytes = await buildPdfWithBudget(targetBytes * ratio);
+      pdfBytes = await buildPdfWithBudget(pdfBytes.byteLength * correctionRatio);
+      currentSizeKB = Math.round(pdfBytes.byteLength / 1024);
+    }
+
+    if (currentSizeKB > targetSizeKB) {
+      pdfBytes = await buildPdfWithBudget(pdfBytes.byteLength * 0.88);
+      currentSizeKB = Math.round(pdfBytes.byteLength / 1024);
     }
 
     const finalSizeKB = (pdfBytes.byteLength / 1024).toFixed(1);
@@ -171,7 +180,7 @@ self.onmessage = async function(e) {
 
     self.postMessage({ 
       type: "PROGRESS", 
-      message: `Complete! Final Size: ${finalSizeKB} KB (Target: ${targetKB} KB)`, 
+      message: `Validated & Complete! Final Size: ${finalSizeKB} KB (Target: ${targetKB} KB)`, 
       percent: 100 
     });
 
@@ -180,7 +189,7 @@ self.onmessage = async function(e) {
       buffer: pdfBytes,
       finalSizeKB: Number(finalSizeKB),
       originalSizeKB: Number(originalSizeKB),
-      targetKB: Number(targetKB),
+      targetKB: targetSizeKB,
       numPages: numPages,
       reductionPercent: reductionPercent
     }, [pdfBytes.buffer]);

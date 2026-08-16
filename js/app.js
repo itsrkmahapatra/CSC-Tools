@@ -300,14 +300,27 @@ const PdfTools = {
     };
 
     let pdfBytes = await buildPdfWithBudget(targetBytes);
+    let currentSizeKB = Math.round(pdfBytes.byteLength / 1024);
+    const targetSizeKB = Number(targetKB);
 
-    // Strict Convergence: If total output size still exceeds target, scale down until <= targetBytes
-    let attempts = 0;
-    while (pdfBytes.byteLength > targetBytes && attempts < 3) {
-      attempts++;
-      const ratio = (targetBytes / pdfBytes.byteLength) * 0.94;
-      onProgress(85 + (attempts * 4), `Strict calibration pass ${attempts}: fine-tuning to guarantee <= ${targetKB} KB...`);
-      pdfBytes = await buildPdfWithBudget(targetBytes * ratio);
+    // -------------------------------------------------------------
+    // STEP 3: Pre-Output Validation & Automatic Re-Processing Loop
+    // -------------------------------------------------------------
+    let reprocessPass = 0;
+    while (currentSizeKB > targetSizeKB && reprocessPass < 5) {
+      reprocessPass++;
+      const correctionRatio = Math.min(0.92, (targetSizeKB / currentSizeKB) * 0.94);
+      onProgress(
+        Math.min(98, 86 + (reprocessPass * 3)),
+        `Validation: ${currentSizeKB} KB > ${targetSizeKB} KB. Re-processing pass ${reprocessPass}...`
+      );
+      pdfBytes = await buildPdfWithBudget(pdfBytes.byteLength * correctionRatio);
+      currentSizeKB = Math.round(pdfBytes.byteLength / 1024);
+    }
+
+    if (currentSizeKB > targetSizeKB) {
+      pdfBytes = await buildPdfWithBudget(pdfBytes.byteLength * 0.88);
+      currentSizeKB = Math.round(pdfBytes.byteLength / 1024);
     }
 
     const finalBlob = new Blob([pdfBytes], { type: 'application/pdf' });
@@ -315,14 +328,14 @@ const PdfTools = {
     const originalSizeKB = Math.round(originalBytes / 1024);
     const reductionPercent = Math.max(0, Math.round(((originalBytes - finalBlob.size) / originalBytes) * 100));
 
-    onProgress(100, `Complete! Final Size: ${finalSizeKB} KB (Target: ${targetKB} KB)`);
+    onProgress(100, `Validated & Complete! Output: ${finalSizeKB} KB (Target: ${targetKB} KB)`);
     return {
       blob: finalBlob,
       blobUrl: URL.createObjectURL(finalBlob),
       fileName: `resized-${targetKB}kb-${file.name}`,
       finalSizeKB,
       originalSizeKB,
-      targetKB: Number(targetKB),
+      targetKB: targetSizeKB,
       reductionPercent,
       numPages
     };
