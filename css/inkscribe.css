@@ -546,15 +546,16 @@ body.light-mode {
 
 /* AI Writer Widget */
 .ai-widget { 
-    position: absolute; 
-    bottom: 80px; 
-    right: 20px; 
-    width: 320px; 
+    position: fixed; 
+    bottom: 148px; 
+    right: 24px; 
+    width: 350px; 
+    max-width: calc(100vw - 48px); 
     background: var(--panel-bg); 
     border: 1px solid var(--border); 
-    border-radius: 16px; 
-    box-shadow: 0 10px 40px rgba(0,0,0,0.3); 
-    z-index: 1000; 
+    border-radius: 18px; 
+    box-shadow: 0 15px 45px rgba(0,0,0,0.35); 
+    z-index: 10001; 
     overflow: hidden; 
     display: flex; 
     flex-direction: column; 
@@ -602,26 +603,31 @@ body.light-mode {
 .ai-controls button { flex: 2; height: 36px; padding: 0; font-size: 0.7rem; }
 
 .ai-toggle-btn { 
-    position: absolute; 
-    bottom: 20px; 
-    right: 20px; 
-    width: 50px; 
-    height: 50px; 
-    border-radius: 50%; 
+    position: fixed; 
+    bottom: 88px; 
+    right: 24px; 
+    height: 46px; 
+    padding: 0 18px; 
+    border-radius: 9999px; 
     background: linear-gradient(135deg, var(--accent), #8b5cf6); 
-    border: none; 
+    border: 1px solid rgba(255, 255, 255, 0.2); 
     color: white; 
-    font-size: 1.5rem; 
+    font-size: 0.85rem; 
+    font-weight: 700; 
     cursor: pointer; 
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); 
-    z-index: 999; 
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4); 
+    z-index: 9998; 
     display: flex; 
     align-items: center; 
-    justify-content: center; 
-    transition: all 0.3s; 
+    gap: 8px; 
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+    font-family: 'Inter', sans-serif;
 }
 
-.ai-toggle-btn:hover { transform: scale(1.1) rotate(15deg); }
+.ai-toggle-btn:hover { 
+    transform: translateY(-3px) scale(1.03); 
+    box-shadow: 0 12px 28px rgba(99, 102, 241, 0.55); 
+}
 
 .close-btn { 
     background: transparent; 

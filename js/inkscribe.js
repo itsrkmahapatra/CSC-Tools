@@ -263,11 +263,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // AI Writer Logic
-    if (aiToggleBtn && aiWidget) {
-        aiToggleBtn.onclick = () => aiWidget.style.display = aiWidget.style.display === 'none' ? 'flex' : 'none';
-        const closeAi = document.getElementById('close-ai');
-        if (closeAi) closeAi.onclick = () => aiWidget.style.display = 'none';
-    }
+    const toggleAi = () => {
+        if (!aiWidget) return;
+        const isHidden = (aiWidget.style.display === 'none' || !aiWidget.style.display);
+        aiWidget.style.display = isHidden ? 'flex' : 'none';
+        if (isHidden && aiPrompt) {
+            aiPrompt.focus();
+        }
+    };
+    if (aiToggleBtn) aiToggleBtn.onclick = toggleAi;
+    const sidebarAiBtn = document.getElementById('sidebar-ai-btn');
+    if (sidebarAiBtn) sidebarAiBtn.onclick = toggleAi;
+    const closeAi = document.getElementById('close-ai');
+    if (closeAi) closeAi.onclick = () => { if (aiWidget) aiWidget.style.display = 'none'; };
 
     function parseMarkdown(text) {
         return text
