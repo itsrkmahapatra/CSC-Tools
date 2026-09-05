@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>InkScribe Handwriting Studio - Docuvate</title>
+  <meta name="description" content="Convert digital text, notes, and DOCX/PDF assignments into natural, realistic human handwriting directly in your browser. 100% client-side privacy.">
+  <meta name="keywords" content="inkscribe, text to handwriting converter, realistic handwriting generator, assignment writer, handwriting pdf generator, docuvate">
+  <meta name="author" content="Raj Kishor Mahapatra">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://itsrkmahapatra.github.io/Docuvate/inkscribe.html">
+  <meta property="og:title" content="InkScribe Handwriting Studio - Docuvate">
+  <meta property="og:description" content="Convert digital text into realistic human handwriting with customizable paper, ruling, and ink colors.">
+  <meta property="og:image" content="assets/developer.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="logo.png">
+
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/inkscribe.css">
+  <link href="https://fonts.googleapis.com/css2?family=Indie+Flower&family=Caveat:wght@400;700&family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Anti-DevTools Protection -->
+  <script>
+    document.addEventListener('contextmenu', event => {
+      if (!event.target.closest('.page-content')) {
+        event.preventDefault();
+      }
+    });
+    document.addEventListener('keydown', event => {
+      if (event.keyCode === 123 || 
+         (event.ctrlKey && event.shiftKey && (event.keyCode === 73 || event.keyCode === 74 || event.keyCode === 67)) ||
+         (event.ctrlKey && (event.keyCode === 85 || event.keyCode === 83))) {
+        event.preventDefault();
+      }
+    });
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body style="height: 100vh; overflow: hidden; display: flex; flex-direction: column;">
+
+  <!-- Top Security Banner -->
+  <header class="privacy-banner">
+    <i data-lucide="lock" style="width: 14px; height: 14px;"></i>
+    <span>100% Client-Side Sandboxed Processing. Zero Cloud Uploads.</span>
+  </header>
+
+  <!-- Navigation Bar -->
+  <nav class="site-navbar">
+    <a href="index.html" class="brand-logo">
+      <span class="brand-badge">Doc</span>uvate
+    </a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="index.html#pdf-studio" class="nav-link">Master PDF Studio</a>
+      <a href="index.html#image-studio" class="nav-link">Master Image Studio</a>
+      <a href="inkscribe.html" class="nav-link" style="color: var(--accent); font-weight: 800;">InkScribe Studio</a>
+      <a href="certificate-downloader.html" class="nav-link">Certificate Downloader</a>
+      <a href="terms.html" class="nav-link">Terms</a>
+      <a href="disclaimer.html" class="nav-link">Disclaimer</a>
+    </div>
+  </nav>
+
+  <!-- Main InkScribe Studio Layout -->
+  <div class="inkscribe-layout">
+    
+    <!-- Left Sidebar: Controls & Settings -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="header-top">
+          <h2>✍️ InkScribe <span>STUDIO</span></h2>
+          <button id="theme-toggle" class="theme-btn" title="Toggle Dark/Light Mode">🌓</button>
+        </div>
+        <p>Digital Handwriting Engine • Docuvate</p>
+      </div>
+      
+      <div class="settings-container">
+        <!-- Document Tools -->
+        <div class="section-title">Document & Import</div>
+        <div class="control-group full">
+          <label>Import Text, PDF, or DOCX</label>
+          <input type="file" id="file-upload" accept=".txt,.pdf,.docx" class="file-input">
+        </div>
+        <div class="tool-grid">
+          <button id="clear-btn" class="btn btn-outline" type="button">Clear Page</button>
+          <button id="download-btn" class="btn btn-primary" type="button">Export PDF</button>
+        </div>
+
+        <!-- Paper Settings -->
+        <div class="section-title">Paper Settings</div>
+        <div class="tool-grid">
+          <div class="control-group">
+            <label>Format</label>
+            <select id="size">
+              <option value="210,297">A4</option>
+              <option value="148,210">A5</option>
+              <option value="216,279">Letter</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label>Orientation</label>
+            <select id="orientation">
+              <option value="portrait">Portrait</option>
+              <option value="landscape">Landscape</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label>Texture</label>
+            <select id="texture">
+              <option value="ruled">Ruled</option>
+              <option value="plain">Plain</option>
+              <option value="graph">Graph</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label>BG Color</label>
+            <input type="color" id="bg-color" value="#ffffff">
+          </div>
+        </div>
+
+        <!-- Ruling & Margins -->
+        <div class="section-title">Ruling & Margins</div>
+        <div class="tool-grid">
+          <div class="control-group">
+            <label>Line Gap (mm)</label>
+            <input type="number" id="spacing" value="8" min="4" max="25">
+          </div>
+          <div class="control-group">
+            <label>Rule Color</label>
+            <input type="color" id="line-color" value="#d1e4f4">
+          </div>
+          <div class="control-group">
+            <label>Top Margin (mm)</label>
+            <input type="number" id="margin-top" value="30" min="0" max="80">
+          </div>
+          <div class="control-group">
+            <label>Left Margin (mm)</label>
+            <input type="number" id="margin-left" value="30" min="0" max="80">
+          </div>
+          <div class="control-group">
+            <label>Right Margin (mm)</label>
+            <input type="number" id="margin-right" value="15" min="0" max="50">
+          </div>
+          <div class="control-group">
+            <label>Bottom Margin (mm)</label>
+            <input type="number" id="margin-bottom" value="15" min="0" max="50">
+          </div>
+          <div class="control-group">
+            <label>Margin Color</label>
+            <input type="color" id="margin-color" value="#ffb6c1">
+          </div>
+          <div class="control-group">
+            <label>Margin Style</label>
+            <select id="margin-style">
+              <option value="solid">Solid</option>
+              <option value="double">Double</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Typography -->
+        <div class="section-title">Handwriting Typography</div>
+        <div class="tool-grid">
+          <div class="control-group full">
+            <label>Font Family</label>
+            <select id="font">
+              <option value="'Indie Flower'">Indie Flower (Natural)</option>
+              <option value="'Caveat'">Caveat (Casual Cursive)</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label>Size (px)</label>
+            <input type="number" id="fs" value="24" min="12" max="64">
+          </div>
+          <div class="control-group">
+            <label>Weight</label>
+            <select id="weight">
+              <option value="400">Normal</option>
+              <option value="700">Bold</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label>Ink Color</label>
+            <input type="color" id="color" value="#1a237e">
+          </div>
+          <div class="control-group">
+            <label>Align</label>
+            <select id="align">
+              <option value="left">Left</option>
+              <option value="center">Center</option>
+              <option value="right">Right</option>
+              <option value="justify">Justify</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label>Line Height</label>
+            <input type="number" step="0.1" id="line-height" value="1.5" min="1" max="3">
+          </div>
+          <div class="control-group">
+            <label>Word Spacing (px)</label>
+            <input type="number" id="word-spacing" value="2" min="-2" max="15">
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <p>Engineered by <strong>Raj Kishor Mahapatra</strong></p>
+        <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.25rem;">Docuvate Client-Side Workstation Suite</p>
+      </div>
+    </aside>
+    
+    <!-- Right Workspace: Canvas & Pages -->
+    <div class="workspace">
+      <!-- AI Writer Widget -->
+      <div id="ai-writer-widget" class="ai-widget" style="display: none;">
+        <div class="ai-widget-header">
+          <span>✨ InkScribe AI Writer</span>
+          <button id="close-ai" class="close-btn" type="button">&times;</button>
+        </div>
+        <div class="ai-widget-body">
+          <textarea id="ai-prompt" placeholder="Ask AI to write essay, notes, or paragraph..."></textarea>
+          <div class="ai-controls">
+            <button id="ask-ai-btn" class="btn btn-primary" type="button">Write into Page</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Toggle Button -->
+      <button id="toggle-ai-widget" class="ai-toggle-btn" type="button" title="Open AI Writer">✨</button>
+
+      <!-- Context Menu for Rich Text Selection -->
+      <div id="context-menu" class="context-menu" style="display: none;">
+        <div class="menu-row">
+          <button class="cmd-btn" data-cmd="bold" title="Bold" type="button">Bold</button>
+          <button class="cmd-btn" data-cmd="italic" title="Italic" type="button">Italic</button>
+          <button class="cmd-btn" data-cmd="underline" title="Underline" type="button">Underline</button>
+        </div>
+        <div class="menu-row">
+          <button class="cmd-btn" data-cmd="justifyLeft" title="Align Left" type="button">Left</button>
+          <button class="cmd-btn" data-cmd="justifyCenter" title="Align Center" type="button">Center</button>
+          <button class="cmd-btn" data-cmd="justifyRight" title="Align Right" type="button">Right</button>
+        </div>
+        <div class="menu-row">
+          <div class="ctx-group">
+            <label>Size</label>
+            <select id="ctx-size" class="ctx-select">
+              <option value="1">Small</option>
+              <option value="3" selected>Normal</option>
+              <option value="5">Large</option>
+              <option value="7">Huge</option>
+            </select>
+          </div>
+          <div class="ctx-group">
+            <label>Color</label>
+            <input type="color" id="ctx-color" class="ctx-input" title="Text Color" value="#1a237e">
+          </div>
+        </div>
+        <div class="menu-row">
+          <button class="cmd-btn" data-cmd="removeFormat" title="Clear Formatting" type="button">Clear Format</button>
+        </div>
+      </div>
+
+      <!-- Pagination Bar -->
+      <div class="pagination-bar" id="pagination-bar">
+        <!-- Injected dynamically -->
+      </div>
+
+      <!-- Main Canvas for Handwriting Pages -->
+      <main class="main-canvas" id="editor-container">
+        <!-- Injected dynamically -->
+      </main>
+    </div>
+
+  </div>
+
+  <!-- Processing Overlay -->
+  <div id="processing-overlay" class="processing-overlay" style="display: none;">
+    <div class="processing-content">
+      <div class="funny-anim">
+        <span class="emoji">🖋️</span>
+        <span class="emoji">📄</span>
+        <span class="emoji">✨</span>
+      </div>
+      <h3>InkScribe is working its magic...</h3>
+      <p>Simulating digital handwriting, please wait!</p>
+    </div>
+  </div>
+
+  <!-- External Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://js.puter.com/v2/"></script>
+
+  <!-- Application Logic -->
+  <script src="js/inkscribe.js"></script>
+  <script src="js/upi-widget.js" defer></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>
