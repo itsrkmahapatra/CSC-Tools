@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Odisha e-District Certificate Downloader - Docuvate</title>
+  <meta name="description" content="Instant 1-click gateway to download official Odisha e-District certificates (Caste, Residence, Income, Legal Heir) with your 8-character token. 100% client-side privacy.">
+  <meta name="keywords" content="odisha edistrict certificate download, edistrict odisha token download, caste certificate download odisha, income certificate odisha, residence certificate odisha, docuvate">
+  <meta name="author" content="Raj Kishor Mahapatra">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://itsrkmahapatra.github.io/Docuvate/certificate-downloader.html">
+  <meta property="og:title" content="Odisha e-District Certificate Downloader - Docuvate">
+  <meta property="og:description" content="Instant 1-click gateway to download official Odisha e-District certificates with your 8-character token.">
+  <meta property="og:image" content="assets/developer.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="logo.png">
+
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Anti-DevTools Protection -->
+  <script>
+    document.addEventListener('contextmenu', event => event.preventDefault());
+    document.addEventListener('keydown', event => {
+      if (event.keyCode === 123 || 
+         (event.ctrlKey && event.shiftKey && (event.keyCode === 73 || event.keyCode === 74 || event.keyCode === 67)) ||
+         (event.ctrlKey && (event.keyCode === 85 || event.keyCode === 83))) {
+        event.preventDefault();
+      }
+    });
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- Top Security Banner -->
+  <header class="privacy-banner">
+    <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i>
+    <span>100% Client-Side Sandboxed Processing. Direct Odisha e-District Gateway.</span>
+  </header>
+
+  <!-- Navigation Bar -->
+  <nav class="site-navbar">
+    <a href="index.html" class="brand-logo">
+      <span class="brand-badge">Doc</span>uvate
+    </a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="index.html#pdf-studio" class="nav-link">Master PDF Studio</a>
+      <a href="index.html#image-studio" class="nav-link">Master Image Studio</a>
+      <a href="certificate-downloader.html" class="nav-link" style="color: var(--cert-accent);">Certificate Downloader</a>
+      <a href="terms.html" class="nav-link">Terms</a>
+      <a href="disclaimer.html" class="nav-link">Disclaimer</a>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="cert-tool-wrapper">
+
+    <!-- Breadcrumb / Back Link -->
+    <div style="margin-bottom: 1.5rem;">
+      <a href="index.html" style="font-size: 0.875rem; font-weight: 700; color: #64748b; display: inline-flex; align-items: center; gap: 0.35rem; transition: color 0.15s;">
+        <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Back to Docuvate Home
+      </a>
+    </div>
+
+    <!-- Certificate Card -->
+    <div class="cert-main-card">
+      <!-- Decorative Header Background -->
+      <div class="cert-card-header">
+        <svg class="cert-header-pattern" fill="none" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <pattern id="certGrid" width="10" height="10" patternUnits="userSpaceOnUse">
+            <path d="M 10 0 L 0 0 0 10" fill="none" stroke="white" stroke-width="0.5"/>
+          </pattern>
+          <rect width="100" height="100" fill="url(#certGrid)"/>
+        </svg>
+
+        <div class="cert-icon-wrapper">
+          <i data-lucide="award" style="width: 38px; height: 38px;"></i>
+        </div>
+        <h1 class="cert-card-title">Odisha e-District Portal</h1>
+        <p class="cert-card-subtitle">Official Certificate Download Gateway</p>
+      </div>
+
+      <!-- Card Body -->
+      <div class="cert-card-body">
+        
+        <!-- Form Section -->
+        <div id="certFormSection" style="width: 100%; transition: opacity 0.3s ease;">
+          
+          <!-- Disclaimer & Fair Use Notice -->
+          <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid #f59e0b; border-radius: var(--radius-sm); padding: 0.875rem 1rem; margin-bottom: 1.5rem; display: flex; gap: 0.75rem; align-items: flex-start; text-align: left;">
+            <i data-lucide="alert-triangle" style="width: 18px; height: 18px; color: #d97706; flex-shrink: 0; margin-top: 2px;"></i>
+            <div style="font-size: 0.8125rem; color: #92400e; line-height: 1.5;">
+              <strong>Important Notice:</strong> This is an independent utility referencing publicly accessible endpoints. It is <strong>NOT</strong> an authorized government service. <strong>Do not spam or automate requests; use strictly when required.</strong> <a href="certificate-disclaimer.html" style="color: #b45309; font-weight: 700; text-decoration: underline;">Read Full Disclaimer & Policy</a>
+            </div>
+          </div>
+
+          <div class="token-input-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <label for="tokenInput" class="token-input-label" style="margin-bottom: 0;">
+                Enter Certificate Token ID
+              </label>
+              <span id="charCount" style="font-size: 0.75rem; font-weight: 700; color: #94a3b8;">0/8</span>
+            </div>
+
+            <div class="token-input-wrapper">
+              <input 
+                type="text" 
+                id="tokenInput" 
+                name="tokenInput" 
+                class="token-input" 
+                placeholder="e.g. AB12CD34" 
+                maxlength="8" 
+                autocomplete="off" 
+                spellcheck="false"
+                autofocus
+              />
+              <div class="token-input-icon">
+                <i data-lucide="key" style="width: 20px; height: 20px;"></i>
+              </div>
+            </div>
+
+            <div id="tokenError" class="token-error-text">
+              <i data-lucide="alert-circle" style="width: 16px; height: 16px;"></i>
+              <span>Please enter a valid 8-character alphanumeric token (e.g., AB12CD34).</span>
+            </div>
+          </div>
+
+          <button id="verifyBtn" class="cert-btn-verify" type="button">
+            <span>Verify & Locate Certificate</span>
+            <i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>
+          </button>
+        </div>
+
+        <!-- Loader Section -->
+        <div id="certLoaderSection" class="cert-loader-container">
+          <div class="cert-loader-spinner"></div>
+          <h3 class="cert-loader-title">Verifying Token Details</h3>
+          <p class="cert-loader-desc">Securely connecting to the official Odisha e-District servers...</p>
+        </div>
+
+        <!-- Result Section -->
+        <div id="certResultSection" class="cert-result-container">
+          <div class="cert-success-badge">
+            <i data-lucide="check" style="width: 44px; height: 44px; stroke-width: 3;"></i>
+          </div>
+
+          <h2 class="cert-result-title">Ready to Download</h2>
+          <p class="cert-result-desc">Your official certificate has been verified and is ready for download.</p>
+
+          <div class="cert-token-display-pill">
+            <span class="cert-token-label">Token ID</span>
+            <span id="displayToken" class="cert-token-val"></span>
+          </div>
+
+          <div class="cert-action-btn-group">
+            <button id="triggerDownloadBtn" class="cert-btn-download" type="button">
+              <i data-lucide="download" style="width: 20px; height: 20px;"></i>
+              <span>Download Certificate (PDF)</span>
+            </button>
+
+            <a id="directPortalLink" href="#" target="_blank" rel="noopener noreferrer" class="cert-btn-secondary">
+              <i data-lucide="external-link" style="width: 16px; height: 16px;"></i>
+              <span>Open Direct Portal Link</span>
+            </a>
+
+            <button id="copyLinkBtn" class="cert-btn-secondary" type="button">
+              <i data-lucide="copy" style="width: 16px; height: 16px;"></i>
+              <span>Copy Direct Download Link</span>
+            </button>
+          </div>
+
+          <button id="resetBtn" class="cert-btn-reset" type="button">
+            <i data-lucide="rotate-ccw" style="width: 15px; height: 15px;"></i>
+            <span>Verify another certificate token</span>
+          </button>
+        </div>
+
+        <!-- Hidden iframe used to trigger download silently without popups -->
+        <iframe id="downloadIframe" style="display: none;" title="Download Gateway"></iframe>
+
+      </div>
+    </div>
+
+    <!-- Quick Guide & FAQs -->
+    <div class="cert-info-grid">
+      <div class="cert-info-card">
+        <h3 class="cert-info-title">
+          <i data-lucide="help-circle" style="width: 18px; height: 18px; color: #059669;"></i>
+          Where is my Token ID?
+        </h3>
+        <p class="cert-info-desc">
+          Your 8-character alphanumeric token (e.g. <code>AB12CD34</code>) is printed on your official Odisha e-District acknowledgement receipt or sent via SMS upon application approval.
+        </p>
+      </div>
+
+      <div class="cert-info-card">
+        <h3 class="cert-info-title">
+          <i data-lucide="file-check-2" style="width: 18px; height: 18px; color: #059669;"></i>
+          Supported Certificates
+        </h3>
+        <p class="cert-info-desc">
+          Resident / Domicile Certificate, Caste Certificate (SC/ST/OBC/SEBC), Income Certificate, Legal Heir Certificate, and Guardianship Certificates.
+        </p>
+      </div>
+
+      <div class="cert-info-card">
+        <h3 class="cert-info-title">
+          <i data-lucide="lock" style="width: 18px; height: 18px; color: #059669;"></i>
+          Privacy Guarantee
+        </h3>
+        <p class="cert-info-desc">
+          This client-side utility queries the official Odisha e-District endpoint directly. No personal data, tokens, or documents are ever logged or uploaded to external servers.
+        </p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <img src="assets/developer.png" alt="Raj Kishor Mahapatra" class="dev-avatar" />
+    <p><strong>Docuvate</strong> • Engineered by <strong>Raj Kishor Mahapatra</strong></p>
+    <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.25rem;">Free, Private, and Open Source Client-Side Workstations</p>
+    <div class="footer-links">
+      <a href="index.html" class="footer-link">Home</a>
+      <a href="certificate-disclaimer.html" class="footer-link" style="color: #d97706; font-weight: 700;">Certificate Disclaimer</a>
+      <a href="terms.html" class="footer-link">Terms & Conditions</a>
+      <a href="disclaimer.html" class="footer-link">General Disclaimer</a>
+    </div>
+  </footer>
+
+  <!-- Application Logic -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) window.lucide.createIcons();
+
+      const tokenInput = document.getElementById('tokenInput');
+      const charCount = document.getElementById('charCount');
+      const verifyBtn = document.getElementById('verifyBtn');
+      const tokenError = document.getElementById('tokenError');
+
+      const certFormSection = document.getElementById('certFormSection');
+      const certLoaderSection = document.getElementById('certLoaderSection');
+      const certResultSection = document.getElementById('certResultSection');
+
+      const displayToken = document.getElementById('displayToken');
+      const triggerDownloadBtn = document.getElementById('triggerDownloadBtn');
+      const directPortalLink = document.getElementById('directPortalLink');
+      const copyLinkBtn = document.getElementById('copyLinkBtn');
+      const resetBtn = document.getElementById('resetBtn');
+      const downloadIframe = document.getElementById('downloadIframe');
+      const toastContainer = document.getElementById('toastContainer');
+
+      let currentDownloadUrl = "";
+
+      function showToast(message) {
+        if (!toastContainer) return;
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = message;
+        toastContainer.appendChild(toast);
+        setTimeout(() => toast.remove(), 3500);
+      }
+
+      // Format input dynamically: uppercase and alphanumeric only
+      tokenInput.addEventListener('input', function() {
+        this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        charCount.textContent = `${this.value.length}/8`;
+        if (this.value.length === 8) {
+          charCount.style.color = '#059669';
+        } else {
+          charCount.style.color = '#94a3b8';
+        }
+
+        if (this.value.length > 0) {
+          tokenError.classList.remove('is-visible');
+          tokenInput.classList.remove('is-error', 'shake-it');
+        }
+      });
+
+      tokenInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          verifyBtn.click();
+        }
+      });
+
+      verifyBtn.addEventListener('click', () => {
+        const token = tokenInput.value.trim();
+        const isValid = /^[A-Z0-9]{8}$/.test(token);
+
+        if (!isValid) {
+          tokenError.classList.add('is-visible');
+          tokenInput.classList.add('is-error', 'shake-it');
+          setTimeout(() => tokenInput.classList.remove('shake-it'), 400);
+          return;
+        }
+
+        tokenError.classList.remove('is-visible');
+        tokenInput.classList.remove('is-error');
+
+        // Transition: Form -> Loader
+        certFormSection.style.opacity = '0';
+        setTimeout(() => {
+          certFormSection.style.display = 'none';
+          certLoaderSection.style.display = 'flex';
+          certLoaderSection.style.opacity = '0';
+          requestAnimationFrame(() => {
+            certLoaderSection.style.opacity = '1';
+          });
+        }, 250);
+
+        // Prepare download URL
+        currentDownloadUrl = `https://edistrict.odisha.gov.in/t/yVP1h${token}`;
+
+        // Artificial smooth delay to simulate handshake & provide visual feedback
+        setTimeout(() => {
+          certLoaderSection.style.opacity = '0';
+          setTimeout(() => {
+            certLoaderSection.style.display = 'none';
+            displayToken.textContent = token;
+            directPortalLink.href = currentDownloadUrl;
+
+            certResultSection.style.display = 'flex';
+            certResultSection.style.opacity = '0';
+            requestAnimationFrame(() => {
+              certResultSection.style.opacity = '1';
+            });
+            if (window.lucide) window.lucide.createIcons();
+          }, 250);
+        }, 1200);
+      });
+
+      // Trigger download via silent iframe + direct fallback
+      triggerDownloadBtn.addEventListener('click', () => {
+        if (!currentDownloadUrl) return;
+
+        const originalHtml = triggerDownloadBtn.innerHTML;
+        triggerDownloadBtn.innerHTML = `
+          <i data-lucide="loader" style="width: 20px; height: 20px; animation: rotation 1s linear infinite;"></i>
+          <span>Downloading...</span>
+        `;
+        if (window.lucide) window.lucide.createIcons();
+
+        try {
+          downloadIframe.src = currentDownloadUrl;
+        } catch (e) {
+          window.open(currentDownloadUrl, '_blank');
+        }
+
+        showToast("Download initiated via Odisha e-District gateway!");
+
+        setTimeout(() => {
+          triggerDownloadBtn.innerHTML = originalHtml;
+          if (window.lucide) window.lucide.createIcons();
+        }, 2500);
+      });
+
+      // Copy link to clipboard
+      copyLinkBtn.addEventListener('click', async () => {
+        if (!currentDownloadUrl) return;
+        try {
+          await navigator.clipboard.writeText(currentDownloadUrl);
+          showToast("Download URL copied to clipboard!");
+        } catch (e) {
+          const tempInp = document.createElement('input');
+          tempInp.value = currentDownloadUrl;
+          document.body.appendChild(tempInp);
+          tempInp.select();
+          document.execCommand('copy');
+          document.body.removeChild(tempInp);
+          showToast("Download URL copied to clipboard!");
+        }
+      });
+
+      // Reset Form
+      resetBtn.addEventListener('click', () => {
+        tokenInput.value = '';
+        charCount.textContent = '0/8';
+        charCount.style.color = '#94a3b8';
+        currentDownloadUrl = '';
+
+        certResultSection.style.opacity = '0';
+        setTimeout(() => {
+          certResultSection.style.display = 'none';
+          certFormSection.style.display = 'block';
+          certFormSection.style.opacity = '0';
+          requestAnimationFrame(() => {
+            certFormSection.style.opacity = '1';
+            tokenInput.focus();
+          });
+        }, 250);
+      });
+    });
+  </script>
+
+  <!-- Support Widget -->
+  <script src="js/upi-widget.js" defer></script>
+</body>
+</html>
