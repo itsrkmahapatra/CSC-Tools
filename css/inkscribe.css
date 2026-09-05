@@ -546,20 +546,25 @@ body.light-mode {
 
 /* AI Writer Widget */
 .ai-widget { 
-    position: fixed; 
-    bottom: 148px; 
-    right: 24px; 
-    width: 350px; 
+    position: absolute; 
+    top: 125px; 
+    right: 20px; 
+    width: 340px; 
     max-width: calc(100vw - 48px); 
     background: var(--panel-bg); 
     border: 1px solid var(--border); 
-    border-radius: 18px; 
-    box-shadow: 0 15px 45px rgba(0,0,0,0.35); 
-    z-index: 10001; 
+    border-radius: 16px; 
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3); 
+    z-index: 1000; 
     overflow: hidden; 
     display: flex; 
     flex-direction: column; 
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+    animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1); 
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-15px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .ai-widget-header { 
@@ -603,31 +608,26 @@ body.light-mode {
 .ai-controls button { flex: 2; height: 36px; padding: 0; font-size: 0.7rem; }
 
 .ai-toggle-btn { 
-    position: fixed; 
-    bottom: 88px; 
-    right: 24px; 
-    height: 46px; 
-    padding: 0 18px; 
-    border-radius: 9999px; 
+    position: absolute; 
+    top: 65px; 
+    right: 20px; 
+    width: 50px; 
+    height: 50px; 
+    border-radius: 50%; 
     background: linear-gradient(135deg, var(--accent), #8b5cf6); 
-    border: 1px solid rgba(255, 255, 255, 0.2); 
+    border: none; 
     color: white; 
-    font-size: 0.85rem; 
-    font-weight: 700; 
+    font-size: 1.5rem; 
     cursor: pointer; 
-    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4); 
-    z-index: 9998; 
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); 
+    z-index: 999; 
     display: flex; 
     align-items: center; 
-    gap: 8px; 
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-    font-family: 'Inter', sans-serif;
+    justify-content: center; 
+    transition: all 0.3s; 
 }
 
-.ai-toggle-btn:hover { 
-    transform: translateY(-3px) scale(1.03); 
-    box-shadow: 0 12px 28px rgba(99, 102, 241, 0.55); 
-}
+.ai-toggle-btn:hover { transform: scale(1.1) rotate(15deg); }
 
 .close-btn { 
     background: transparent; 
